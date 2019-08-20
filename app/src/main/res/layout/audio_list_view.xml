@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="80dp"
+    android:layout_margin="10dp"
+    android:clickable="true"
+    android:elevation="10dp"
+    android:foreground="?android:attr/selectableItemBackground"
+    app:cardBackgroundColor="@color/cardBack"
+    app:cardCornerRadius="5dp"
+    app:cardElevation="6dp"
+    app:cardMaxElevation="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_audio" />
+
+        <RelativeLayout
+            android:layout_width="280dp"
+            android:layout_height="match_parent"
+            android:layout_margin="5dp">
+
+            <TextView
+                android:id="@+id/audio_text_view_title"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:ellipsize="end"
+                android:fontFamily="@font/mvboli"
+                android:maxLines="1"
+                android:text="Track 1"
+                android:textColor="#000"
+                android:textSize="@dimen/main_text_size"/>
+
+            <TextView
+                android:id="@+id/audio_text_view_path"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/audio_text_view_title"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:padding="2dp"
+                android:text="Lorem aodfijkadflnkladfnlkdaf"
+                android:textSize="@dimen/primary_text_size" />
+
+            <LinearLayout
+                android:id="@+id/audio_info_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@+id/audio_text_view_path"
+                android:layout_alignParentBottom="true"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:paddingBottom="1dp"
+                    android:text="Status: "
+                    android:textSize="@dimen/secondary_text_size" />
+
+                <TextView
+                    android:id="@+id/audio_text_view_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Online"
+                    android:textSize="@dimen/secondary_text_size" />
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="2dp"
+                    android:background="@color/colorGrey"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="5dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Connection:"
+                    android:textSize="@dimen/secondary_text_size" />
+
+
+                <ImageView
+                    android:id="@+id/audio_image_view_connection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_conn_suc"/>
+
+                <ProgressBar
+                    android:id="@+id/audio_connection_progress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="invisible"/>
+
+            </LinearLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_above="@id/audio_info_view"
+                android:layout_toRightOf="@+id/audio_text_view_title">
+
+            </RelativeLayout>
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <ImageView
+                android:id="@+id/audio_image_view_lock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:layout_marginEnd="@dimen/icon_padding"
+                android:scaleType="fitXY"
+                android:src="@drawable/ic_lock"
+                android:visibility="invisible"/>
+        </RelativeLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

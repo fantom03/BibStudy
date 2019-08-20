@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="false"
+    tools:context=".HomeDefault">
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/home_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".HomeDefault">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/home_appbar"
+            android:layout_width="match_parent"
+            android:layout_height="250dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/home_img"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_alignParentTop="true"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/ic_home_img" />
+
+                <LinearLayout
+                    android:id="@+id/bar_lay"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginRight="20dp"
+                    android:orientation="horizontal"
+                    android:padding="5dp">
+
+                    <ImageButton
+                        android:id="@+id/nav_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:background="@null"
+                        android:src="@drawable/ic_nav_bar" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="20dp"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginEnd="20dp"
+                        android:layout_marginBottom="5dp"
+                        android:orientation="vertical">
+
+                        <include layout="@layout/search_bar" />
+
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <Button
+                    android:layout_width="4dp"
+                    android:layout_height="20dp"
+                    android:layout_alignBottom="@+id/bar_lay"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginEnd="25dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/ic_overflow" />
+
+                <com.google.android.material.tabs.TabLayout
+                    android:id="@+id/home_tabLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    app:tabIndicator="@drawable/sh_tab_indicator"
+                    app:tabIndicatorColor="@color/colorPrimary"
+                    app:tabSelectedTextColor="@color/colorWhite"
+                    app:tabTextAppearance="@style/TabTextAppearance">
+
+                </com.google.android.material.tabs.TabLayout>
+
+            </RelativeLayout>
+
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <androidx.viewpager.widget.ViewPager
+            android:id="@+id/home_view_pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/home_appbar">
+
+        </androidx.viewpager.widget.ViewPager>
+    </RelativeLayout>
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@drawable/nav_back"
+        app:headerLayout="@layout/nav_header"
+        app:itemHorizontalPadding="20dp"
+        app:itemIconTint="@color/colorWhite"
+        app:itemTextAppearance="@style/TextAppearance.AppCompat.Widget.PopupMenu.Large"
+        app:itemTextColor="@color/colorWhite"
+        app:menu="@menu/drawer_menu"/>
+
+
+</androidx.drawerlayout.widget.DrawerLayout>
