@@ -19,6 +19,8 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 
@@ -29,11 +31,23 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     private DrawerLayout drawerLayout;
     private ImageButton actionButton;
     private NavigationView navigationView;
+    private FirebaseUser user;
+    private MenuItem signIn_drawer;
+    private boolean isLoggedIn = false;
+    private boolean isAdmin = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        if(user!=null){
+            if(user.getEmail().equals("nathan3gill@gmail.com")){
+                isAdmin = true;
+            }
+            isLoggedIn = true;
+        }
 
         tabLayout = findViewById(R.id.home_tabLayout);
         drawerLayout = findViewById(R.id.drawer);
@@ -72,6 +86,11 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
         });
 
         navigationView = findViewById(R.id.nav_view);
+        if(isLoggedIn){
+            navigationView.getMenu().getItem(2).setTitle("Sign Out");
+        }else{
+            navigationView.getMenu().getItem(2).setTitle("Sign In");
+        }
         navigationView.setNavigationItemSelectedListener(this);
         navigationView.getMenu().getItem(0).setTitle("AUDIO & DOCS");
 
@@ -108,6 +127,19 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
                 Intent i = new Intent(this, DataActivity.class);
                 startActivity(i);
                 drawerLayout.closeDrawer(GravityCompat.START);
+                break;
+            case R.id.drawer_signIn:
+                if(isLoggedIn){
+                    FirebaseAuth.getInstance().signOut();
+                    user = null;
+                    isLoggedIn = false; isAdmin = false;
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                    navigationView.getMenu().getItem(2).setTitle("Sign In");
+                }else{
+                    i = new Intent(this, SignIn.class);
+                    startActivity(i);
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                }
                 break;
             default:
                 return true;
