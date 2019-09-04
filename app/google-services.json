@@ -1,0 +1,85 @@
+{
+  "project_info": {
+    "project_number": "360080921237",
+    "firebase_url": "https://biblicalstudies-43758.firebaseio.com",
+    "project_id": "biblicalstudies-43758",
+    "storage_bucket": "biblicalstudies-43758.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:360080921237:android:ce08e365657842b9",
+        "android_client_info": {
+          "package_name": "com.biblicalstudies.main"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "360080921237-h65n62vhq56gf6cdm31qgd1535347tbv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.biblicalstudies.main",
+            "certificate_hash": "e2b6a79e05f23d6cc24b90efb19a8b92a786a17a"
+          }
+        },
+        {
+          "client_id": "360080921237-i2nuu5i27661ukvlhfalr7aoqnkarbr4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAP8F9cWB0QL2M_yDZ1l6oxSl2v4pGB1rQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "360080921237-i2nuu5i27661ukvlhfalr7aoqnkarbr4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:360080921237:android:f47ad3dd378a459b",
+        "android_client_info": {
+          "package_name": "com.example.biblicalstudies"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "360080921237-oeplodup6qqftdk7s43jlf7bnms5r8fm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.biblicalstudies",
+            "certificate_hash": "09b5db4c57f28dd6de2c8e343ac596a1fa93756a"
+          }
+        },
+        {
+          "client_id": "360080921237-i2nuu5i27661ukvlhfalr7aoqnkarbr4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAP8F9cWB0QL2M_yDZ1l6oxSl2v4pGB1rQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "360080921237-i2nuu5i27661ukvlhfalr7aoqnkarbr4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
