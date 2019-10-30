@@ -9,9 +9,7 @@
     android:fitsSystemWindows="false"
     tools:context=".HomeDefault">
 
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
+    <RelativeLayout
         android:id="@+id/home_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -31,6 +29,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_alignParentTop="true"
+                    android:layout_marginTop="0dp"
                     android:scaleType="fitXY"
                     android:src="@drawable/ic_home_img" />
 
@@ -38,44 +37,40 @@
                     android:id="@+id/bar_lay"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
-                    android:layout_marginLeft="20dp"
+                    android:layout_marginLeft="10dp"
                     android:layout_marginTop="10dp"
-                    android:layout_marginRight="20dp"
+                    android:layout_marginRight="10dp"
                     android:orientation="horizontal"
                     android:padding="5dp">
 
                     <ImageButton
                         android:id="@+id/nav_button"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
                         android:layout_gravity="center"
                         android:background="@null"
                         android:src="@drawable/ic_nav_bar" />
 
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="280dp"
                         android:layout_height="match_parent"
-                        android:layout_marginStart="20dp"
+                        android:layout_marginStart="10dp"
                         android:layout_marginTop="5dp"
-                        android:layout_marginEnd="20dp"
+                        android:layout_marginEnd="10dp"
                         android:layout_marginBottom="5dp"
                         android:orientation="vertical">
 
                         <include layout="@layout/search_bar" />
 
-
                     </LinearLayout>
 
-                </LinearLayout>
+                    <Button
+                        android:layout_width="7dp"
+                        android:layout_height="match_parent"
+                        android:layout_margin="10dp"
+                        android:background="@drawable/ic_overflow"/>
 
-                <Button
-                    android:layout_width="4dp"
-                    android:layout_height="20dp"
-                    android:layout_alignBottom="@+id/bar_lay"
-                    android:layout_alignParentEnd="true"
-                    android:layout_marginEnd="25dp"
-                    android:layout_marginBottom="20dp"
-                    android:background="@drawable/ic_overflow" />
+                </LinearLayout>
 
                 <com.google.android.material.tabs.TabLayout
                     android:id="@+id/home_tabLayout"

@@ -32,7 +32,6 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     private ImageButton actionButton;
     private NavigationView navigationView;
     private FirebaseUser user;
-    private MenuItem signIn_drawer;
     private boolean isLoggedIn = false;
     private boolean isAdmin = false;
 
@@ -71,12 +70,12 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
 
             @Override
             public void onDrawerOpened(@NonNull View drawerView) {
-                getWindow().setStatusBarColor(getResources().getColor(R.color.colorPrimary));
+
             }
 
             @Override
             public void onDrawerClosed(@NonNull View drawerView) {
-                getWindow().setStatusBarColor(getResources().getColor(R.color.colorPrimaryDark));
+
             }
 
             @Override
@@ -87,30 +86,28 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
 
         navigationView = findViewById(R.id.nav_view);
         if(isLoggedIn){
-            navigationView.getMenu().getItem(2).setTitle("Sign Out");
+            navigationView.getMenu().getItem(2).setTitle("SIGN OUT");
         }else{
-            navigationView.getMenu().getItem(2).setTitle("Sign In");
+            navigationView.getMenu().getItem(2).setTitle("SIGN IN");
         }
         navigationView.setNavigationItemSelectedListener(this);
-        navigationView.getMenu().getItem(0).setTitle("AUDIO & DOCS");
 
-        tabLayout.addTab(tabLayout.newTab().setText("CLASSES"));
         tabLayout.addTab(tabLayout.newTab().setText("LESSONS"));
+        tabLayout.addTab(tabLayout.newTab().setText("AUDIO"));
 
         viewPager = findViewById(R.id.home_view_pager);
 
         tabLayout.setupWithViewPager(viewPager);
 
         PageAdapter pageAdapter = new PageAdapter(getSupportFragmentManager());
-        pageAdapter.addFragment(new ClassFragment(), "CLASSES");
         pageAdapter.addFragment(new LessonFragment(), "LESSONS");
+        pageAdapter.addFragment(new AudioFragment(), "AUDIO");
         viewPager.setAdapter(pageAdapter);
 
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.drawer_menu,menu);
         return true;
     }
 
@@ -124,8 +121,6 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         switch(menuItem.getItemId()){
             case R.id.drawer_navigate:
-                Intent i = new Intent(this, DataActivity.class);
-                startActivity(i);
                 drawerLayout.closeDrawer(GravityCompat.START);
                 break;
             case R.id.drawer_signIn:
@@ -134,9 +129,9 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
                     user = null;
                     isLoggedIn = false; isAdmin = false;
                     drawerLayout.closeDrawer(GravityCompat.START);
-                    navigationView.getMenu().getItem(2).setTitle("Sign In");
+                    navigationView.getMenu().getItem(2).setTitle("SIGN IN");
                 }else{
-                    i = new Intent(this, SignIn.class);
+                    Intent i = new Intent(this, SignIn.class);
                     startActivity(i);
                     drawerLayout.closeDrawer(GravityCompat.START);
                 }

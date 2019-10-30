@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:id="@+id/drawer_navigate" android:icon="@drawable/ic_nac_data"
-        android:title="AUDIO \u0026 DOCS"/>
     <item android:id="@+id/drawer_language" android:icon="@drawable/ic_nav_language"
         android:title="LANGUAGE"/>
+    <item android:id="@+id/drawer_navigate" android:icon="@drawable/ic_nac_data"
+        android:title="FORUM"/>
     <item android:id="@+id/drawer_signIn" android:icon="@drawable/ic_nav_person"
         android:title="SIGN IN"/>
-
+    <item android:id="@+id/drawer_about" android:icon="@drawable/ic_about"
+        android:title="ABOUT"/>
+    <item android:id="@+id/drawer_faq" android:icon="@drawable/ic_faq"
+        android:title="FAQ"/>
 </menu>
