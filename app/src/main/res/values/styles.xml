@@ -6,12 +6,38 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+
+        <item name="android:windowContentTransitions">true</item>
+
     </style>
 
     <style name="TabTextAppearance" parent="Widget.Design.TabLayout">
         <item name="android:textSize">@dimen/main_text_size</item>
         <item name="android:textColor">@color/colorGrey</item>
         <item name="android:fontFamily">@font/georgia</item>
+    </style>
+
+
+    <style name="FullScreenDialogStyle" parent="Theme.AppCompat.Dialog">
+
+        <item name="android:windowNoTitle">true</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+
+        <!-- Set this to true if you want Full Screen without status bar -->
+        <item name="android:windowFullscreen">false</item>
+
+        <item name="android:windowIsFloating">false</item>
+
+        <!-- This is important! Don't forget to set window background -->
+        <item name="android:windowBackground">@color/colorWhite</item>
+
+    </style>
+
+    <style name="DialogAnimation">
+        <!-- Additionally if you want animations when dialog opening -->
+        <item name="android:windowEnterAnimation">@transition/explode_in</item>
+        <item name="android:windowExitAnimation">@transition/explode_out</item>
     </style>
 
 </resources>

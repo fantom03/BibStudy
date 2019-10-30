@@ -37,16 +37,16 @@
                     android:id="@+id/bar_lay"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
-                    android:layout_marginLeft="10dp"
+                    android:layout_marginLeft="5dp"
                     android:layout_marginTop="10dp"
-                    android:layout_marginRight="10dp"
+                    android:layout_marginRight="5dp"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="1dp">
 
                     <ImageButton
                         android:id="@+id/nav_button"
-                        android:layout_width="50dp"
-                        android:layout_height="50dp"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
                         android:layout_gravity="center"
                         android:background="@null"
                         android:src="@drawable/ic_nav_bar" />
@@ -65,10 +65,13 @@
                     </LinearLayout>
 
                     <Button
-                        android:layout_width="7dp"
-                        android:layout_height="match_parent"
-                        android:layout_margin="10dp"
-                        android:background="@drawable/ic_overflow"/>
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginLeft="10dp"
+                        android:layout_marginRight="10dp"
+                        android:background="@drawable/ic_set_random"
+                        android:padding="10dp" />
 
                 </LinearLayout>
 

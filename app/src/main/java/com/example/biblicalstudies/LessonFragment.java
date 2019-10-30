@@ -1,17 +1,19 @@
 package com.example.biblicalstudies;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -21,7 +23,12 @@ import java.util.List;
 public class LessonFragment extends Fragment {
 
     private RecyclerView recyclerView;
-    private List<String> classData = Arrays.asList("King of Kings", "Prince of Peace", "Lord of lords");
+    private List<String> classData = Arrays.asList("King of Kings",
+            "Prince of Peace",
+            "Lord of lords",
+            "John the Baptist",
+            "Life on Earth",
+            "Royalty in Heaven");
     private View view;
 
     @Nullable
@@ -46,18 +53,17 @@ class LessonRecycler extends RecyclerView.Adapter<LessonRecycler.LessonViewHolde
 
     private List<String> classData;
     private View view;
-    private Context ct;
-    private Dialog popup;
+    private static Context context;
     public LessonRecycler(Context cm, List<String> classData) {
         this.classData = classData;
-        ct = cm;
+        context = cm;
     }
 
     @NonNull
     @Override
     public LessonViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
-        view = LayoutInflater.from(ct).inflate(R.layout.lessons_list_view, parent, false);
+        view = LayoutInflater.from(context).inflate(R.layout.lessons_list_view, parent, false);
         return new LessonViewHolder(view);
     }
 
@@ -82,18 +88,16 @@ class LessonRecycler extends RecyclerView.Adapter<LessonRecycler.LessonViewHolde
 
         @Override
         public void onClick(View view) {
-            final Dialog popup = new Dialog(view.getContext());
-            popup.setContentView(R.layout.doc_popup);
-            TextView textView1 = popup.findViewById(R.id.popup_text_view);
-            textView1.setText(textView.getText().toString());
-            Button close = popup.findViewById(R.id.popup_close);
-            close.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    popup.dismiss();
-                }
-            });
-            popup.show();
+            AppCompatActivity activity = (AppCompatActivity) context;
+            FragmentManager fm = activity.getSupportFragmentManager();
+            FragmentTransaction ft = fm.beginTransaction();
+            Fragment prev = fm.findFragmentByTag("dialog");
+            DialogFragment popup = new DocFragment(textView.getText().toString());
+            if(prev!= null){
+                fm.popBackStack();
+            }else{
+                popup.show(fm, "dialog");
+            }
         }
     }
 
