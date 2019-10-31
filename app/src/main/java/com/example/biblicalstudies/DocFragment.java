@@ -21,9 +21,17 @@ public class DocFragment extends DialogFragment {
     private String[] data;
     private View view;
     private String title;
+    private static DocFragment fragment;
 
-    public DocFragment(String title){
+    private DocFragment(String title){
         this.title = title;
+    }
+
+    public static DocFragment getInstance(String title){
+        if(fragment!=null){
+            fragment.dismiss();
+        }
+        return fragment = new DocFragment(title);
     }
 
     @Nullable
@@ -67,6 +75,7 @@ public class DocFragment extends DialogFragment {
         super.onActivityCreated(savedInstanceState);
         getDialog().getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
     }
+
 }
 
 class DocRecycler extends RecyclerView.Adapter<DocRecycler.DocViewHolder> {

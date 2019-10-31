@@ -1,11 +1,23 @@
 package com.example.biblicalstudies;
 
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
+import android.view.animation.AnticipateOvershootInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,6 +29,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -32,6 +45,7 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     private ImageButton actionButton;
     private NavigationView navigationView;
     private FirebaseUser user;
+    private Boolean isFloatingBtnClicked = false;
     private boolean isLoggedIn = false;
     private boolean isAdmin = false;
 
@@ -104,6 +118,117 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
         pageAdapter.addFragment(new AudioFragment(), "AUDIO");
         viewPager.setAdapter(pageAdapter);
 
+        if(isAdmin)
+            (findViewById(R.id.floating_area)).setVisibility(RelativeLayout.VISIBLE);
+    }
+
+
+    public void onClickFloatingButton(View view){
+
+        ImageView blk = findViewById(R.id.block_view);
+
+        FloatingActionButton btn = view.findViewById(R.id.floating_btn);
+
+        if(!isFloatingBtnClicked){
+            isFloatingBtnClicked = true;
+
+            blk.setVisibility(ImageView.VISIBLE);
+            Animation fadeIn = new AlphaAnimation(0,1f);
+            fadeIn.setInterpolator(new DecelerateInterpolator());
+            fadeIn.setDuration(300);
+            AnimationSet set = new AnimationSet(false);
+            set.addAnimation(fadeIn);
+            blk.setAnimation(set);
+            blk.setEnabled(false);
+
+            AnimatorSet rotateSet = (AnimatorSet) AnimatorInflater.loadAnimator(view.getContext(), R.animator.rotate_45);
+            rotateSet.setTarget(btn);
+            rotateSet.start();
+            showFABMenu();
+
+
+        }else{
+            isFloatingBtnClicked = false;
+
+            Animation fadeOut = new AlphaAnimation(1f,0);
+            fadeOut.setInterpolator(new AccelerateInterpolator());
+            fadeOut.setDuration(300);
+            AnimationSet set = new AnimationSet(false);
+            set.addAnimation(fadeOut);
+            blk.setAnimation(set);
+            blk.setVisibility(ImageView.GONE);
+
+            AnimatorSet rotateSet = (AnimatorSet) AnimatorInflater.loadAnimator(view.getContext(), R.animator.rotate_45_reverse);
+            rotateSet.setTarget(btn);
+            rotateSet.start();
+
+            closeFABMenu();
+        }
+    }
+
+    private void showFABMenu() {
+        LinearLayout btn1 = findViewById(R.id.floating_btn1);
+        LinearLayout btn2 = findViewById(R.id.floating_btn2);
+        LinearLayout btn3 = findViewById(R.id.floating_btn3);
+
+        btn1.setVisibility(View.VISIBLE);
+        btn2.setVisibility(View.VISIBLE);
+        btn3.setVisibility(View.VISIBLE);
+
+        btn1.animate().translationY(-getResources()
+                .getDimension(R.dimen.standard_55)).alpha(1f)
+                .setInterpolator(new AnticipateOvershootInterpolator()).setDuration(500);
+        btn2.animate().translationY(-getResources()
+                .getDimension(R.dimen.standard_105)).alpha(1f)
+                .setInterpolator(new AnticipateOvershootInterpolator()).setDuration(500);
+        btn3.animate().translationY(-getResources()
+                .getDimension(R.dimen.standard_155)).alpha(1f)
+                .setInterpolator(new AnticipateOvershootInterpolator()).setDuration(500);
+
+
+    }
+
+    private void closeFABMenu(){
+        final LinearLayout btn1 = findViewById(R.id.floating_btn1);
+        final LinearLayout btn2 = findViewById(R.id.floating_btn2);
+        final LinearLayout btn3 = findViewById(R.id.floating_btn3);
+
+        btn1.animate().translationY(0).alpha(0).setDuration(300).withEndAction(new Runnable() {
+            @Override
+            public void run() {
+                btn1.setVisibility(View.GONE);
+            }
+        });
+        btn2.animate().translationY(0).alpha(0).setDuration(300).withEndAction(new Runnable() {
+            @Override
+            public void run() {
+                btn2.setVisibility(View.GONE);
+            }
+        });
+        btn3.animate().translationY(0).alpha(0).setDuration(300).withEndAction(new Runnable() {
+            @Override
+            public void run() {
+                btn3.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    public void onClickAddUser(View view){
+        Intent i = new Intent(this,SignIn.class);
+        startActivity(i);
+    }
+
+
+    public void onClickCycleVerse(View view){
+        final FloatingActionButton btn = view.findViewById(R.id.cycle_verse);
+        btn.animate().rotation(-90f)
+                .setInterpolator(new AccelerateDecelerateInterpolator()).setDuration(400)
+        .withEndAction(new Runnable() {
+            @Override
+            public void run() {
+                btn.animate().rotation(0).setDuration(400);
+            }
+        });
     }
 
     @Override
@@ -129,6 +254,7 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
                     user = null;
                     isLoggedIn = false; isAdmin = false;
                     drawerLayout.closeDrawer(GravityCompat.START);
+                    (findViewById(R.id.floating_area)).setVisibility(RelativeLayout.GONE);
                     navigationView.getMenu().getItem(2).setTitle("SIGN IN");
                 }else{
                     Intent i = new Intent(this, SignIn.class);

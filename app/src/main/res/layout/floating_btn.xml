@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/floating_area"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:visibility="gone">
+
+<!--    Layout for button 3-->
+    <LinearLayout
+        android:id="@+id/floating_btn3"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="40dp"
+        android:alpha="0"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginRight="10dp"
+            app:cardBackgroundColor="#b24b8f">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fontFamily="@font/mvboli"
+                android:gravity="center"
+                android:padding="2dp"
+                android:text="@string/add_admin"
+                android:textSize="12sp"
+                android:textStyle="bold"/>
+
+        </androidx.cardview.widget.CardView>
+
+<!--        Button 3 -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#b24b8f"
+            android:src="@drawable/profile"
+            app:fabSize="mini"
+            app:maxImageSize="20dp"/>
+
+    </LinearLayout>
+
+<!--    Layout for Button 2-->
+    <LinearLayout
+        android:id="@+id/floating_btn2"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="40dp"
+        android:alpha="0"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginRight="10dp"
+            app:cardBackgroundColor="#4bb2a2">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fontFamily="@font/mvboli"
+                android:gravity="center"
+                android:padding="2dp"
+                android:text="@string/add_verse"
+                android:textSize="12sp"
+                android:textStyle="bold"/>
+
+        </androidx.cardview.widget.CardView>
+
+<!--        Button 2 -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#4bb2a2"
+            android:src="@drawable/edit"
+            app:fabSize="mini"
+            app:maxImageSize="20dp"/>
+
+    </LinearLayout>
+
+<!--    Layout for Button 1-->
+    <LinearLayout
+        android:id="@+id/floating_btn1"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="40dp"
+        android:alpha="0"
+        android:clickable="true"
+        android:focusable="true"
+        android:onClick="onClickAddUser"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginRight="10dp"
+            app:cardBackgroundColor="#b2a24b">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fontFamily="@font/mvboli"
+                android:gravity="center"
+                android:padding="2dp"
+                android:text="@string/add_file"
+                android:textSize="12sp"
+                android:textStyle="bold"/>
+
+        </androidx.cardview.widget.CardView>
+
+<!--        Button 1 -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#b2a24b"
+            android:src="@drawable/attachment"
+            app:fabSize="mini"
+            app:maxImageSize="20dp"/>
+
+    </LinearLayout>
+
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/floating_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="40dp"
+        android:backgroundTint="@color/colorPrimary"
+        android:clickable="true"
+        android:focusable="true"
+        android:onClick="onClickFloatingButton"
+        android:src="@drawable/floating_btn"
+        app:rippleColor="#5bb24b"/>
+
+</RelativeLayout>

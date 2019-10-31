@@ -10,7 +10,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -89,15 +88,14 @@ class LessonRecycler extends RecyclerView.Adapter<LessonRecycler.LessonViewHolde
         @Override
         public void onClick(View view) {
             AppCompatActivity activity = (AppCompatActivity) context;
-            FragmentManager fm = activity.getSupportFragmentManager();
-            FragmentTransaction ft = fm.beginTransaction();
-            Fragment prev = fm.findFragmentByTag("dialog");
-            DialogFragment popup = new DocFragment(textView.getText().toString());
-            if(prev!= null){
-                fm.popBackStack();
-            }else{
-                popup.show(fm, "dialog");
-            }
+            FragmentManager manager = activity.getSupportFragmentManager();
+            FragmentTransaction transaction = manager.beginTransaction();
+
+            transaction.addToBackStack(null);
+
+            DocFragment frag = DocFragment.getInstance(textView.getText().toString());
+            frag.show(transaction, "dialog");
+
         }
     }
 

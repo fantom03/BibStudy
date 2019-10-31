@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">Biblical Studies</string>
     <string name="king_of_kings">King of Kings</string>
+    <string name="add_verse">ADD VERSE</string>
+    <string name="add_admin">ADD ADMIN</string>
+    <string name="add_file">ADD FILE</string>
+    <string name="todo">TODO</string>
 </resources>
