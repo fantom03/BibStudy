@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/back_adddata">
+
+    <LinearLayout
+        android:layout_width="340dp"
+        android:layout_height="290dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="80dp"
+        android:orientation="vertical">
+
+        <Spinner
+            android:id="@+id/add_filetype"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/spinner"
+            android:gravity="center_vertical"
+            android:prompt="@string/choose_file_type"/>
+
+        <EditText
+            android:id="@+id/add_edittext"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/input_adddata"
+            android:ellipsize="end"
+            android:fontFamily="@font/mvboli"
+            android:gravity="center_vertical"
+            android:hint="Lesson Name"
+            android:maxLines="1"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="8dp"
+            android:textSize="15sp"
+            android:visibility="gone"
+            />
+
+        <Spinner
+            android:id="@+id/add_lessons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/spinner_lessons"
+            android:prompt="@string/choose_lessons" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
+
+            <CheckBox
+                android:id="@+id/add_checkBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="30dp"
+                android:buttonTint="@color/colorPrimary"
+                android:checked="true"
+                android:fontFamily="@font/mvboli"
+                android:text="Existing"
+                android:textSize="12sp"/>
+
+            <Spinner
+                android:id="@+id/add_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="55dp"
+                android:background="@drawable/spinner_document"
+                android:paddingTop="5dp"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/add_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="50dp"
+                android:text="ADD"/>
+            <Button
+                android:id="@+id/delete_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp"
+                android:text="DELETE"
+                android:tooltipText="Long click to delete files from upload task"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="340dp"
+        android:layout_height="250dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="60dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/add_result"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:layout_marginStart="20dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/mvboli"
+            android:hint="Files To Upload"
+            android:padding="10dp"
+            android:scrollbars="vertical"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="20dp"
+            android:textColor="@color/colorPrimary"
+            android:textSize="12sp"/>
+        <TextView
+            android:id="@+id/count_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:gravity="center_vertical"
+            android:layout_marginTop="5dp"
+            android:fontFamily="@font/mvboli"
+            android:text="File Count: 0"
+            android:textColor="@color/colorGrey"
+            android:padding="10dp"
+            android:textSize="10sp"/>
+
+    </LinearLayout>
+
+    <RelativeLayout
+        android:id="@+id/black_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0.8"
+        android:background="@drawable/black_screen"
+        android:clickable="true">
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/upload_percentage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/upload_progress"
+        android:layout_centerInParent="true"
+        android:layout_margin="5dp"
+        android:text="Upload.. 25%"
+        android:textColor="@color/colorWhite"
+        android:textSize="15sp"/>
+
+    <ProgressBar
+        android:id="@+id/upload_progress"
+        style="@android:style/Widget.Material.Light.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_marginStart="60dp"
+        android:layout_marginEnd="60dp"
+        android:progress="25"
+        android:progressTint="@color/colorWhite"/>
+
+</RelativeLayout>

@@ -29,11 +29,13 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import com.facebook.login.LoginManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 
@@ -49,14 +51,22 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     private boolean isLoggedIn = false;
     private boolean isAdmin = false;
 
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         user = FirebaseAuth.getInstance().getCurrentUser();
         if(user!=null){
-            if(user.getEmail().equals("nathan3gill@gmail.com")){
+            if(user.getEmail()!=null && user.getEmail().equals("nathan3gill@gmail.com")){
                 isAdmin = true;
             }
             isLoggedIn = true;
@@ -123,48 +133,7 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     }
 
 
-    public void onClickFloatingButton(View view){
 
-        ImageView blk = findViewById(R.id.block_view);
-
-        FloatingActionButton btn = view.findViewById(R.id.floating_btn);
-
-        if(!isFloatingBtnClicked){
-            isFloatingBtnClicked = true;
-
-            blk.setVisibility(ImageView.VISIBLE);
-            Animation fadeIn = new AlphaAnimation(0,1f);
-            fadeIn.setInterpolator(new DecelerateInterpolator());
-            fadeIn.setDuration(300);
-            AnimationSet set = new AnimationSet(false);
-            set.addAnimation(fadeIn);
-            blk.setAnimation(set);
-            blk.setEnabled(false);
-
-            AnimatorSet rotateSet = (AnimatorSet) AnimatorInflater.loadAnimator(view.getContext(), R.animator.rotate_45);
-            rotateSet.setTarget(btn);
-            rotateSet.start();
-            showFABMenu();
-
-
-        }else{
-            isFloatingBtnClicked = false;
-
-            Animation fadeOut = new AlphaAnimation(1f,0);
-            fadeOut.setInterpolator(new AccelerateInterpolator());
-            fadeOut.setDuration(300);
-            AnimationSet set = new AnimationSet(false);
-            set.addAnimation(fadeOut);
-            blk.setAnimation(set);
-            blk.setVisibility(ImageView.GONE);
-
-            AnimatorSet rotateSet = (AnimatorSet) AnimatorInflater.loadAnimator(view.getContext(), R.animator.rotate_45_reverse);
-            rotateSet.setTarget(btn);
-            rotateSet.start();
-
-            closeFABMenu();
-        }
-    }
 
     private void showFABMenu() {
         LinearLayout btn1 = findViewById(R.id.floating_btn1);
@@ -213,11 +182,50 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
         });
     }
 
-    public void onClickAddUser(View view){
-        Intent i = new Intent(this,SignIn.class);
-        startActivity(i);
-    }
 
+
+    public void onClickFloatingButton(View view){
+
+        ImageView blk = findViewById(R.id.block_view);
+
+        FloatingActionButton btn = view.findViewById(R.id.floating_btn);
+
+        if(!isFloatingBtnClicked){
+            isFloatingBtnClicked = true;
+
+            blk.setVisibility(ImageView.VISIBLE);
+            Animation fadeIn = new AlphaAnimation(0,1f);
+            fadeIn.setInterpolator(new DecelerateInterpolator());
+            fadeIn.setDuration(300);
+            AnimationSet set = new AnimationSet(false);
+            set.addAnimation(fadeIn);
+            blk.setAnimation(set);
+            blk.setEnabled(false);
+
+            AnimatorSet rotateSet = (AnimatorSet) AnimatorInflater.loadAnimator(view.getContext(), R.animator.rotate_45);
+            rotateSet.setTarget(btn);
+            rotateSet.start();
+            showFABMenu();
+
+
+        }else{
+            isFloatingBtnClicked = false;
+
+            Animation fadeOut = new AlphaAnimation(1f,0);
+            fadeOut.setInterpolator(new AccelerateInterpolator());
+            fadeOut.setDuration(300);
+            AnimationSet set = new AnimationSet(false);
+            set.addAnimation(fadeOut);
+            blk.setAnimation(set);
+            blk.setVisibility(ImageView.GONE);
+
+            AnimatorSet rotateSet = (AnimatorSet) AnimatorInflater.loadAnimator(view.getContext(), R.animator.rotate_45_reverse);
+            rotateSet.setTarget(btn);
+            rotateSet.start();
+
+            closeFABMenu();
+        }
+    }
 
     public void onClickCycleVerse(View view){
         final FloatingActionButton btn = view.findViewById(R.id.cycle_verse);
@@ -229,6 +237,20 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
                 btn.animate().rotation(0).setDuration(400);
             }
         });
+    }
+
+    public void onClickAddData(View view){
+        Intent i = new Intent(this, AddData.class);
+        startActivity(i);
+    }
+
+    public void onClickAddAdmin(View view){
+        Intent i = new Intent(this,SignIn.class);
+        startActivity(i);
+    }
+
+    public void onClickAddVerse(View view){
+
     }
 
     @Override
@@ -256,10 +278,10 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
                     drawerLayout.closeDrawer(GravityCompat.START);
                     (findViewById(R.id.floating_area)).setVisibility(RelativeLayout.GONE);
                     navigationView.getMenu().getItem(2).setTitle("SIGN IN");
+                    LoginManager.getInstance().logOut();
                 }else{
                     Intent i = new Intent(this, SignIn.class);
                     startActivity(i);
-                    drawerLayout.closeDrawer(GravityCompat.START);
                 }
                 break;
             default:

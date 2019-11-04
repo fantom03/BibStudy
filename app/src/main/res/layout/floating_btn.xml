@@ -19,6 +19,7 @@
         android:clickable="true"
         android:focusable="true"
         android:orientation="horizontal"
+        android:onClick="onClickAddAdmin"
         android:visibility="gone">
 
         <androidx.cardview.widget.CardView
@@ -64,6 +65,7 @@
         android:clickable="true"
         android:focusable="true"
         android:orientation="horizontal"
+        android:onClick="onClickAddVerse"
         android:visibility="gone">
 
         <androidx.cardview.widget.CardView
@@ -108,7 +110,7 @@
         android:alpha="0"
         android:clickable="true"
         android:focusable="true"
-        android:onClick="onClickAddUser"
+        android:onClick="onClickAddData"
         android:orientation="horizontal"
         android:visibility="gone">
 

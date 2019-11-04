@@ -10,13 +10,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fitsSystemWindows="false"
-        tools:context=".HomeDefault">
+        tools:context="com.example.biblicalstudies.HomeDefault">
 
         <RelativeLayout
             android:id="@+id/home_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            tools:context=".HomeDefault">
+            tools:context="com.example.biblicalstudies.HomeDefault">
 
             <com.google.android.material.appbar.AppBarLayout
                 android:id="@+id/home_appbar"

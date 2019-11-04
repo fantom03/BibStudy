@@ -1,80 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_width="match_parent" android:layout_height="match_parent">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/audio_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/rl_dock"
-        android:layout_marginBottom="-1dp">
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="2dp" >
 
     </androidx.recyclerview.widget.RecyclerView>
-
-    <RelativeLayout
-        android:id="@+id/rl_dock"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true">
-
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@android:color/transparent"
-            android:scaleType="fitXY"
-            android:src="@drawable/ic_audio_dock"/>
-
-        <LinearLayout
-            android:layout_width="142dp"
-            android:layout_height="match_parent"
-            android:layout_alignParentLeft="true"
-            android:layout_centerInParent="true"
-            android:layout_marginStart="15dp"
-            android:orientation="horizontal">
-
-            <Button
-                android:layout_width="40dp"
-                android:layout_height="match_parent"
-                android:layout_margin="@dimen/icon_padding"
-                android:background="@drawable/ic_audio_extra"/>
-            <Button
-                android:layout_width="40dp"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/icon_padding"
-                android:background="@drawable/ic_audio_prev"/>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="142dp"
-            android:layout_height="match_parent"
-            android:layout_alignParentRight="true"
-            android:layout_centerInParent="true"
-            android:orientation="horizontal">
-
-            <Button
-                android:layout_width="40dp"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/icon_padding"
-                android:background="@drawable/ic_audio_next"/>
-            <Button
-                android:layout_width="40dp"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/icon_padding"
-                android:background="@drawable/ic_audio_shuffle"/>
-
-        </LinearLayout>
-
-    </RelativeLayout>
-
-    <Button
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="17dp"
-        android:background="@drawable/ic_audio_play"
-        />
 
 </RelativeLayout>

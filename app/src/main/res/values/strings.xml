@@ -5,4 +5,10 @@
     <string name="add_admin">ADD ADMIN</string>
     <string name="add_file">ADD FILE</string>
     <string name="todo">TODO</string>
+    <string name="facebook_app_id">422872765303051</string>
+    <string name="fb_login_protocol_scheme">fb422872765303051</string>
+    <string name="document">Document</string>
+    <string name="lorem_aodfijkadflnkladfnlkdaf">Lorem aodfijkadflnkladfnlkdaf</string>
+    <string name="choose_file_type">Choose File Type...</string>
+    <string name="choose_lessons">Choose Lesson...</string>
 </resources>
