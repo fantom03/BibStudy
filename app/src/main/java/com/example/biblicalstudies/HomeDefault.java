@@ -35,7 +35,6 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 
@@ -55,7 +54,6 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     @Override
     protected void onStart() {
         super.onStart();
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
     }
 
     @Override

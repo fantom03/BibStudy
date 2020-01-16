@@ -140,6 +140,14 @@
         android:src="@drawable/black_screen"
         android:visibility="gone" />
 
+    <ProgressBar
+        android:id="@+id/loading_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:indeterminateTint="@color/colorAccent"
+        android:visibility="gone"/>
+
         <include layout="@layout/floating_btn"/>
 
 </RelativeLayout>

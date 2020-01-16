@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="60dp"
+    android:layout_margin="2dp"
+    android:elevation="10dp"
+    android:outlineAmbientShadowColor="@color/colorAccent"
+    app:cardCornerRadius="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/adddata_list_view_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fontFamily="@font/mvboli"
+            android:gravity="center_vertical"
+            android:padding="10dp"
+            android:text="Document 1"
+            android:textColor="@color/colorAccent"
+            />
+
+    </LinearLayout>
+
+
+</androidx.cardview.widget.CardView>

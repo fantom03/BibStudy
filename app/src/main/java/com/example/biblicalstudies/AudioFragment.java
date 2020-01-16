@@ -2,15 +2,24 @@ package com.example.biblicalstudies;
 
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Vibrator;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -18,76 +27,121 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class AudioFragment extends Fragment {
 
     private RecyclerView recyclerView;
-    private String[] data;
-    private View view;
+    private List<ModelAudioData> data;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        view = inflater.inflate(R.layout.audio_frag_layout, container,false);
+        final View view = inflater.inflate(R.layout.audio_frag_layout, container,false);
         recyclerView = view.findViewById(R.id.audio_recycler_view);
-        AudioRecycler recycler = new AudioRecycler(getContext(), data);
+
+        data = new ArrayList<>();
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        recyclerView.setAdapter(recycler);
+
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference audioRef = ref.child("audios");
+        audioRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    for(DataSnapshot snap : dataSnapshot.getChildren())
+                        data.add(snap.getValue(ModelAudioData.class));
+                }
+                AudioRecycler recycler = new AudioRecycler(getContext(), data);
+                recyclerView.setAdapter(recycler);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Toast.makeText(view.getContext(),databaseError.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+
         return view;
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        data = new String[]{"","","","","","","",""};
     }
 }
 
 class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> {
 
-    private String[] data;
-    private View view;
+    private static List<ModelAudioData> data;
     private Context ct;
+    private static PendingIntent pendingIntent;
 
-    public AudioRecycler(Context cm, String[] data) {
+    public AudioRecycler(Context cm, List<ModelAudioData> data) {
         this.data = data;
         ct = cm;
+        Intent intent = new Intent(ct, HomeDefault.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        pendingIntent = PendingIntent.getActivity(ct,0,intent,0);
     }
 
     @NonNull
     @Override
     public AudioViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
-        view = LayoutInflater.from(ct).inflate(R.layout.audio_list_view, parent, false);
+        View view = LayoutInflater.from(ct).inflate(R.layout.audio_list_view, parent, false);
         return new AudioViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull AudioViewHolder holder, int position) {
-        String str = "Track: " + (position+1);
+        String str = data.get(position).getTitle();
         holder.textView.setText(str);
     }
 
     @Override
     public int getItemCount() {
-        return data.length;
+        return data.size();
     }
 
     public static class AudioViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener,
-    View.OnCreateContextMenuListener, MenuItem.OnMenuItemClickListener, View.OnLongClickListener {
+                View.OnCreateContextMenuListener, MenuItem.OnMenuItemClickListener,
+                        View.OnLongClickListener {
 
-        private static boolean isPlaying = false, isFinished = false;
+        private static final int NOTIFICATION_ID = 28346;
+        private static final String CHANNEL_ID = "NOTIFICATION_CHANNEL_007";
+        private static boolean isPaused = false;
+        private static AnimatorSet rotateIllusion;
         private final TextView textView;
         private final TextView txtView;
-        private final Button button;
-        private final MediaPlayer player;
+        private final Button playButton;
+        private final Handler handler1, handler2;
+        private final AnimatorSet blinkIllusion;
+        private final ProgressBar progressBar;
+        private NotificationManagerCompat notificationManager;
+        private MediaPlayer player;
         final Runnable mUpdateTime = new Runnable() {
             public void run() {
                 int currentDuration;
-                if (player.isPlaying()) {
+                if (player!=null && player.isPlaying()) {
                     currentDuration = player.getCurrentPosition();
                     updatePlayer(txtView, currentDuration);
                     txtView.postDelayed(this, 1000);
@@ -96,13 +150,11 @@ class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> 
                 }
             }
         };
-        private final int duration;
-        private final ProgressBar progressBar;
         final Runnable mUpdateProgressBar = new Runnable() {
             @Override
             public void run() {
                 int currentDuration;
-                if(player.isPlaying()){
+                if(player!=null && player.isPlaying()){
                     currentDuration = player.getCurrentPosition();
                     progressBar.setProgress(currentDuration);
                     progressBar.postDelayed(this,100);
@@ -111,8 +163,7 @@ class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> 
                 }
             }
         };
-        private final AnimatorSet set;
-
+        private NotificationCompat.Builder notificationBuilder;
 
 
 
@@ -122,80 +173,199 @@ class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> 
 
             textView = itemView.findViewById(R.id.audio_text_view_title);
 
-
-            set = (AnimatorSet) AnimatorInflater.loadAnimator(itemView.getContext(), R.animator.rotation_repeat);
-
             txtView = itemView.findViewById(R.id.time_stamp);
-            button = itemView.findViewById(R.id.audio_play);
 
-            player = MediaPlayer.create(itemView.getContext(), R.raw.song);
-            duration = player.getDuration();
+            playButton = itemView.findViewById(R.id.audio_play);
 
-            progressBar = itemView.findViewById(R.id.determinateBar);
-            progressBar.setMax(duration);
+            blinkIllusion = (AnimatorSet) AnimatorInflater.loadAnimator(itemView.getContext(), R.animator.blink);
 
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if(player.getCurrentPosition()==player.getDuration())
-                        stop(itemView);
-                }
-            }).start();
-
-            button.setOnClickListener(new View.OnClickListener() {
+            playButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     AudioViewHolder.this.onClick(itemView);
                 }
             });
-
-            button.setOnLongClickListener(new View.OnLongClickListener() {
+            playButton.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View view) {
-                    Toast.makeText(view.getContext(), "Stopped Playing", Toast.LENGTH_SHORT).show();
-                    stop(view);
+                    AudioViewHolder.this.onLongClick(itemView);
                     return true;
                 }
             });
 
+            progressBar = itemView.findViewById(R.id.determinateBar);
+
+            handler1 = new Handler();
+            handler2 = new Handler();
+
             itemView.setOnCreateContextMenuListener(this);
+
+            createNotificationChannel();
+        }
+
+
+        private void createNotificationChannel() {
+            // Create the NotificationChannel, but only on API 26+ because
+            // the NotificationChannel class is new and not in the support library
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                CharSequence name = "Biblical Studies";
+                String description = "Notification for Biblical Studies";
+                int importance = NotificationManager.IMPORTANCE_DEFAULT;
+                NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+                channel.setDescription(description);
+                // Register the channel with the system; you can't change the importance
+                // or other notification behaviors after this
+                NotificationManager notificationManager = itemView.getContext().getSystemService(NotificationManager.class);
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
+
+        @Override
+        public void onClick(final View view) {
+            String uri = data.get(getAdapterPosition()).getPath();
+            player = Player.getInstance(uri);
+            player.setLooping(true);
+            if(Player.isURISame(uri)){
+                if(isPaused) resume(view);
+                else if(player.isPlaying()) pause(view);
+                else play(view);
+            }else {
+                Vibrator vibrator = (Vibrator) view.getContext().getSystemService(Context.VIBRATOR_SERVICE);
+                vibrator.vibrate(100);
+                Toast.makeText(view.getContext(), "An audio is already " +
+                        "playing. Stop current audio to play another! ", Toast.LENGTH_LONG).show();
+            }
 
         }
 
         @Override
-        public void onClick(View view) {
-            if(!player.isPlaying()){
-                play(view);
-            }else{
-                pause(view);
-            }
+        public boolean onLongClick(View view) {
+            if(player!=null) stop(view);
+            return true;
         }
 
         private void play(final View view){
-            view.findViewById(R.id.audio_play).setBackgroundResource(R.drawable.ic_pause);
-            set.setTarget(view.findViewById(R.id.audio_img));
-            set.setStartDelay(500);
-            set.start();
-            player.start();
-            txtView.post(mUpdateTime);
-            progressBar.post(mUpdateProgressBar);
+
+            notificationBuilder = new NotificationCompat.Builder(view.getContext(), CHANNEL_ID)
+                    .setSmallIcon(R.drawable.logo_notification)
+            .setContentTitle(data.get(getAdapterPosition()).getTitle())
+            .setContentText("Currently Playing...")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setOngoing(true)
+            .setContentIntent(pendingIntent);
+
+            notificationManager = NotificationManagerCompat.from(view.getContext());
+            notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+
+            rotateIllusion = (AnimatorSet) AnimatorInflater.loadAnimator(view.getContext(), R.animator.rotation_repeat);
+            rotateIllusion.setTarget(view.findViewById(R.id.audio_img));
+            playButton.animate().alpha(0f).setInterpolator(new AccelerateDecelerateInterpolator())
+                    .withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            playButton.setBackground(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_pause));
+                            playButton.animate().alpha(1f).setInterpolator(new AccelerateDecelerateInterpolator())
+                                    .setDuration(400);
+                        }
+                    }).setDuration(400);
+            StorageReference ref = FirebaseStorage.getInstance().getReference();
+            StorageReference audRef = ref.child(data.get(getAdapterPosition()).getPath());
+            audRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                @Override
+                public void onSuccess(Uri uri) {
+                    try {
+                        String url = uri.toString();
+                        if(player.isPlaying()) throw new Exception("Multiple instances not allowed.");
+                        player.setDataSource(url);
+                        player.prepare();
+                        progressBar.setMax(player.getDuration());
+                        player.start();
+                        handler1.post(mUpdateTime);
+                        handler2.post(mUpdateProgressBar);
+                        rotateIllusion.setStartDelay(100);
+                        rotateIllusion.start();
+
+                    } catch (Exception e) {
+                        Toast.makeText(view.getContext(), e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                    }
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(view.getContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
         }
 
-        private void pause(final View view){
-            view.findViewById(R.id.audio_play).setBackgroundResource(R.drawable.ic_audio_play);
-            set.pause();
+        private void resume(final View view){
+
+            notificationBuilder.setContentText("Currently Playing..");
+            notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+
+            blinkIllusion.end();
+            rotateIllusion.resume();
+            playButton.animate().alpha(0f).setInterpolator(new AccelerateDecelerateInterpolator())
+                    .withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            playButton.setBackground(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_pause));
+                            playButton.animate().alpha(1f).setInterpolator(new AccelerateDecelerateInterpolator())
+                                    .setDuration(400);
+                        }
+                    }).setDuration(400);
+            isPaused = false;
+            player.start();
+            handler1.post(mUpdateTime);
+            handler2.post(mUpdateProgressBar);
+        }
+
+        private void pause(final View view) {
+
+            notificationBuilder.setContentText("Currently Paused..");
+            notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+
+            rotateIllusion.pause();
+            playButton.animate().alpha(0f).setInterpolator(new AccelerateDecelerateInterpolator())
+                    .withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            playButton.setBackground(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_audio_play));
+                            blinkIllusion.setTarget(playButton);
+                            blinkIllusion.start();
+                        }
+                    }).setDuration(400);
+            isPaused = true;
             player.pause();
-            textView.post(mUpdateTime);
-            progressBar.post(mUpdateProgressBar);
         }
 
         private void stop(final View view){
-            view.findViewById(R.id.audio_play).setBackgroundResource(R.drawable.ic_audio_play);
-            set.end();
-            player.stop();
-            txtView.setText("0:00");
-            progressBar.setProgress(0);
+            if(player!=null){
+                notificationManager.cancel(NOTIFICATION_ID);
+
+                blinkIllusion.end();
+                rotateIllusion.end();
+                playButton.animate().alpha(0f).setInterpolator(new AccelerateDecelerateInterpolator())
+                        .withEndAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                playButton.setBackground(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_audio_play));
+                                playButton.animate().alpha(1f).setInterpolator(new AccelerateDecelerateInterpolator())
+                                        .setDuration(400);
+                            }
+                        }).setDuration(400);
+                isPaused = false;
+                handler1.removeCallbacksAndMessages(null);
+                handler2.removeCallbacksAndMessages(null);
+                txtView.setText("0:00");
+                progressBar.setProgress(0);
+                player = Player.stopPlayer();
+                Toast.makeText(view.getContext(), "Audio Stopped", Toast.LENGTH_SHORT).show();
+                Vibrator vibrator = (Vibrator) view.getContext().getSystemService(Context.VIBRATOR_SERVICE);
+                vibrator.vibrate(200);
+            }
         }
+
 
 
 
@@ -248,15 +418,39 @@ class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> 
             MenuItem download = contextMenu.add(Menu.NONE,1,1, "Download");
             MenuItem share = contextMenu.add(Menu.NONE, 2, 0, "Share");
             download.setOnMenuItemClickListener(this);
-            share.setOnMenuItemClickListener(this);
         }
 
-        @Override
-        public boolean onLongClick(View view) {
+    }
 
-            return true;
+    static class Player{
+        private static MediaPlayer mediaPlayer;
+        private static String uri;
+
+        private Player() {
+        }
+
+        public static MediaPlayer getInstance(String uri){
+            if(mediaPlayer!=null){
+
+                return mediaPlayer;
+            }
+            Player.uri = uri;
+            return mediaPlayer = new MediaPlayer();
+        }
+
+        public static boolean isURISame(String uri){
+            return Player.uri.equals(uri);
+        }
+
+        public static MediaPlayer stopPlayer(){
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            uri = null;
+            return mediaPlayer = null;
         }
     }
 
-
 }
+
+
+
