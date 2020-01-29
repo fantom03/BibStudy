@@ -1,10 +1,12 @@
 package com.example.biblicalstudies;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,6 +20,7 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -29,22 +32,33 @@ import java.util.List;
 
 public class LessonFragment extends Fragment {
 
-    private RecyclerView recyclerView;
-    private LessonRecycler recycler;
+    private static LessonRecyclerAdapter lessonAdapter;
+
+    private static ArrayList<ModelLessonData> listOfLessonData;
+    private static DatabaseReference dbRef;
+
+    private static String language;
+
+    public LessonFragment(String language){
+        this.language = language;
+    }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.lessons_frag_layout, container, false);
-        final List<ModelLessonData> ls = new ArrayList<>();
-        final DatabaseReference root = FirebaseDatabase.getInstance().getReference();
-        final DatabaseReference ref = root.child("lessons");
+
+        dbRef = FirebaseDatabase.getInstance().getReference();
+        final DatabaseReference ref = dbRef.child("lessons");
 
         final ProgressBar progressBar = this.getActivity().findViewById(R.id.loading_progress);
         progressBar.setVisibility(View.VISIBLE);
 
-        recyclerView = view.findViewById(R.id.lessons_recycler_view);
+        RecyclerView recyclerView = view.findViewById(R.id.lessons_recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        listOfLessonData = new ArrayList<>();
+        lessonAdapter = new LessonRecyclerAdapter(view.getContext(), listOfLessonData, this.language);
+        recyclerView.setAdapter(lessonAdapter);
 
         ref.addValueEventListener(new ValueEventListener() {
             @Override
@@ -55,11 +69,10 @@ public class LessonFragment extends Fragment {
                 if (dataSnapshot.exists()) {
                     for(DataSnapshot snap : dataSnapshot.getChildren()){
                         ModelLessonData data = snap.getValue(ModelLessonData.class);
-                        ls.add(data);
+                        listOfLessonData.add(data);
+                        lessonAdapter.notifyDataSetChanged();
                     }
                 }
-                recycler = new LessonRecycler(LessonFragment.this.getContext(), ls);
-                recyclerView.setAdapter(recycler);
             }
 
             @Override
@@ -75,15 +88,19 @@ public class LessonFragment extends Fragment {
 
 }
 
-class LessonRecycler extends RecyclerView.Adapter<LessonRecycler.CustomViewHolder> {
+class LessonRecyclerAdapter extends RecyclerView.Adapter<LessonRecyclerAdapter.CustomViewHolder> {
 
-    private static List<ModelLessonData> classData;
+
+    private static DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference();
+    private static List<ModelLessonData> lessonDataList;
     private final int VIEW_TYPE_ITEM = 1;
     private final int VIEW_TYPE_LOADING = 0;
     private static Context context;
+    private static String language;
 
-    public LessonRecycler(Context cm, List<ModelLessonData> ls) {
-        this.classData = ls;
+    public LessonRecyclerAdapter(Context cm, List<ModelLessonData> ls, String language) {
+        this.language = language;
+        this.lessonDataList = ls;
         context = cm;
     }
 
@@ -101,20 +118,42 @@ class LessonRecycler extends RecyclerView.Adapter<LessonRecycler.CustomViewHolde
     }
 
     @Override
-    public void onBindViewHolder(@NonNull CustomViewHolder holder, int position) {
-        ModelLessonData data = classData.get(position);
-        holder.textView.setText(data.getName());
+    public void onBindViewHolder(@NonNull final CustomViewHolder holder, int position) {
+        holder.textView.setText(lessonDataList.get(position).getName());
+        holder.isLocked = lessonDataList.get(position).getIsLocked();
+        holder.lockId = lessonDataList.get(position).getLockId();
+        holder.lock.setBackgroundResource(R.drawable.ic_goto);
+        if(holder.isLocked){
+            final DatabaseReference users = dbRef.child("accounts");
+            users.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if(FirebaseAuth.getInstance().getCurrentUser()!=null &&
+                            dataSnapshot.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child(holder.lockId).exists()){
+                        holder.lock.setBackgroundResource(R.drawable.ic_goto);
+                        holder.isLocked = false;
+                    }else{
+                        holder.lock.setBackgroundResource(R.drawable.ic_signin_lock);
+                        holder.isLocked = true;
+                    }
+                }
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+        }
     }
 
     @Override
     public int getItemCount() {
-        return classData.size();
+        return lessonDataList.size();
     }
 
     @Override
     public int getItemViewType(int position) {
         try{
-            if(classData.get(position)!=null){
+            if(lessonDataList.get(position)!=null){
                 return VIEW_TYPE_ITEM;
             }else return VIEW_TYPE_LOADING;
         }catch (ArrayIndexOutOfBoundsException e){
@@ -124,26 +163,36 @@ class LessonRecycler extends RecyclerView.Adapter<LessonRecycler.CustomViewHolde
 
     public static class LessonViewHolder extends CustomViewHolder implements View.OnClickListener {
 
-
         public LessonViewHolder(@NonNull View itemView) {
             super(itemView);
             itemView.setOnClickListener(this);
             textView = itemView.findViewById(R.id.lessons_text_view);
+            lock = itemView.findViewById(R.id.lessons_isLocked);
         }
 
         @Override
         public void onClick(View view) {
-            AppCompatActivity activity = (AppCompatActivity) context;
-            FragmentManager manager = activity.getSupportFragmentManager();
-            FragmentTransaction transaction = manager.beginTransaction();
+            if (!this.isLocked) {
+                lock.setBackgroundResource(R.drawable.ic_goto);
+                AppCompatActivity activity = (AppCompatActivity) context;
+                FragmentManager manager = activity.getSupportFragmentManager();
+                FragmentTransaction transaction = manager.beginTransaction();
 
-            transaction.addToBackStack(null);
+                transaction.addToBackStack(null);
 
-            DocFragment frag = DocFragment.getInstance(classData.get(getAdapterPosition()).getName(),
-                    classData.get(getAdapterPosition()).getDocs());
-            frag.show(transaction, "dialog");
-
-
+                DocFragment frag = DocFragment.getInstance(lessonDataList.get(getAdapterPosition()).getName(),
+                        lessonDataList.get(getAdapterPosition()).getDocs(), language);
+                frag.show(transaction, "dialog");
+            } else {
+                if(FirebaseAuth.getInstance().getCurrentUser()==null){
+                    Toast.makeText(view.getContext(), "Sign in to proceed!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent intent = new Intent(context, LockAccessActivity.class);
+                intent.putExtra("UID", FirebaseAuth.getInstance().getCurrentUser().getUid());
+                intent.putExtra("LOCK_ID", this.lockId);
+                context.startActivity(intent);
+            }
         }
     }
 
@@ -156,7 +205,10 @@ class LessonRecycler extends RecyclerView.Adapter<LessonRecycler.CustomViewHolde
 
     public static class CustomViewHolder extends RecyclerView.ViewHolder{
 
-        TextView textView;
+        public TextView textView;
+        public boolean isLocked;
+        public String lockId;
+        public ImageView lock;
 
         public CustomViewHolder(@NonNull View itemView) {
             super(itemView);

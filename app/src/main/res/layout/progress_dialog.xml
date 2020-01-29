@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp" android:layout_height="80dp"
+    android:layout_gravity="center"
+    android:background="@color/colorWhite"
+    android:orientation="horizontal">
+
+    <RelativeLayout
+        android:layout_width="100dp"
+        android:layout_height="match_parent"
+        android:padding="5dp">
+
+        <ProgressBar
+            android:id="@+id/progress_dialog_bar1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
+
+        <ProgressBar
+            android:id="@+id/progress_dialog_bar2"
+            style="?android:progressBarStyleHorizontal"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_centerInParent="true"
+            android:progress="0"
+            android:progressDrawable="@drawable/circle"/>
+
+        <TextView
+            android:id="@+id/progress_dialog_percentage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fontFamily="@font/mvboli"
+            android:gravity="center"
+            android:textColor="@color/colorAccent"/>
+
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/progress_dialog_text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fontFamily="@font/mvboli"
+        android:gravity="center"
+        android:text="Downloading"
+        android:textColor="@color/colorAccent"
+        android:textSize="24sp"/>
+
+</LinearLayout>

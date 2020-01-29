@@ -6,6 +6,16 @@ public class ModelDocumentData {
     private String path;
     private boolean isLocked;
     private long timeStamp;
+    private String lockId;
+    private String language;
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public String getLockId() {
+        return lockId;
+    }
 
     public ModelDocumentData() {
     }
@@ -18,7 +28,7 @@ public class ModelDocumentData {
         return path;
     }
 
-    public boolean isLocked() {
+    public boolean getIsLocked() {
         return isLocked;
     }
 

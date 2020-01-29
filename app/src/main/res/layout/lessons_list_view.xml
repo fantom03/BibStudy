@@ -42,13 +42,11 @@
             android:textSize="@dimen/main_text_size" />
 
         <ImageView
-            android:layout_gravity="end|center"
-            android:layout_marginTop="5dp"
+            android:id="@+id/lessons_isLocked"
+            android:layout_gravity="center"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="5dp"
-            android:scaleType="fitXY"
-            android:src="@drawable/ic_goto"/>
+            android:scaleType="fitXY"/>
 
     </LinearLayout>
 

@@ -29,19 +29,14 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="Nathan Gill"
-                    android:textColor="@color/colorWhite" />
-
-                <TextView
+                    android:id="@+id/email"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:text="nathan3gill@gmail.com"
                     android:textColor="@color/colorWhite"
-                    android:textSize="10sp" />
+                    android:gravity="center"
+                    android:textSize="10sp"/>
 
 
             </LinearLayout>

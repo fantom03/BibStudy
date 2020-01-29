@@ -30,16 +30,20 @@ import com.facebook.FacebookException;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class SignIn extends AppCompatActivity {
 
     private CallbackManager callbackManager;
+    private static DatabaseReference dbRef;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -88,8 +92,8 @@ public class SignIn extends AppCompatActivity {
 
         callbackManager = CallbackManager.Factory.create();
 
+        dbRef = FirebaseDatabase.getInstance().getReference();
     }
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -265,17 +269,18 @@ public class SignIn extends AppCompatActivity {
                     if(task.isSuccessful()){
                         try {
                             Thread.sleep(400);
-                            Toast.makeText(SignIn.this,
-                                    "Account Created!",Toast.LENGTH_SHORT).show();
-                            authenticationView.animate().alpha(0).setInterpolator(new DecelerateInterpolator())
-                                    .setDuration(100).withEndAction(new Runnable() {
-                                @Override
-                                public void run() {
-                                    authenticationView.setVisibility(View.GONE);
-                                    auhtenticateProgressBar.setVisibility(View.GONE);
-                                }
-                            });
-                            findViewById(R.id.signup_go_back).performClick();
+                            auth.signInWithEmailAndPassword(email.getText().toString(), pass.getText().toString())
+                                    .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                                        @Override
+                                        public void onSuccess(AuthResult authResult) {
+                                            Toast.makeText(SignIn.this,
+                                                    "Account Created! Sign In successful!",Toast.LENGTH_SHORT).show();
+                                            Intent i = new Intent(SignIn.this,HomeDefault.class);
+                                            startActivity(i);
+                                            finish();
+                                        }
+                                    });
+
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -405,8 +410,7 @@ public class SignIn extends AppCompatActivity {
 
     private void fbAccessTokenAuthentication(final AccessToken token){
 
-        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
-        System.out.println("MESSAGE: "+token.getUserId());
+        final AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
         FirebaseAuth auth = FirebaseAuth.getInstance();
         auth.signInWithCredential(credential).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
             @Override
@@ -416,7 +420,7 @@ public class SignIn extends AppCompatActivity {
                             "Sign in Successful!", Toast.LENGTH_LONG).show();
                     Intent i = new Intent(SignIn.this,HomeDefault.class);
                     startActivity(i);
-                    finishAffinity();
+                    finish();
                 }else{
                     Toast.makeText(SignIn.this,
                             task.getException().getLocalizedMessage(), Toast.LENGTH_LONG).show();

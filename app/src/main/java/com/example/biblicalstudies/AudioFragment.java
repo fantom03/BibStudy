@@ -1,16 +1,21 @@
 package com.example.biblicalstudies;
 
+import android.Manifest;
+import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.view.ContextMenu;
@@ -21,57 +26,71 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AudioFragment extends Fragment {
 
-    private RecyclerView recyclerView;
-    private List<ModelAudioData> data;
+    private static AudioRecyclerAdapter adapter;
+    private static List<ModelAudioData> data;
+    private static String language;
+
+    public AudioFragment(String string) {
+        language = string;
+    }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.audio_frag_layout, container,false);
-        recyclerView = view.findViewById(R.id.audio_recycler_view);
-
+        final RecyclerView recyclerView = view.findViewById(R.id.audio_recycler_view);
         data = new ArrayList<>();
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        adapter = new AudioRecyclerAdapter(view.getContext(), data, language, this);
+        recyclerView.setAdapter(adapter);
 
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
         DatabaseReference audioRef = ref.child("audios");
         audioRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    for(DataSnapshot snap : dataSnapshot.getChildren())
-                        data.add(snap.getValue(ModelAudioData.class));
+                if(dataSnapshot.exists()) {
+                    for (DataSnapshot snap : dataSnapshot.getChildren()){
+                        ModelAudioData audioData = snap.getValue(ModelAudioData.class);
+                        if(audioData.getLanguage()!= null &&
+                                audioData.getLanguage().equals(language))data.add(audioData);
+                    }adapter.notifyDataSetChanged();
                 }
-                AudioRecycler recycler = new AudioRecycler(getContext(), data);
-                recyclerView.setAdapter(recycler);
             }
 
             @Override
@@ -89,32 +108,68 @@ public class AudioFragment extends Fragment {
     }
 }
 
-class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> {
+class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdapter.AudioViewHolder> {
 
     private static List<ModelAudioData> data;
-    private Context ct;
     private static PendingIntent pendingIntent;
+    private static Context context;
+    private static String language;
+    private static AudioFragment fragment;
 
-    public AudioRecycler(Context cm, List<ModelAudioData> data) {
+    public AudioRecyclerAdapter(Context cm, List<ModelAudioData> data, String lang, AudioFragment audioFragment) {
         this.data = data;
-        ct = cm;
-        Intent intent = new Intent(ct, HomeDefault.class);
+        this.context = cm;
+        Intent intent = new Intent(cm, HomeDefault.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        pendingIntent = PendingIntent.getActivity(ct,0,intent,0);
+        pendingIntent = PendingIntent.getActivity(cm,0,intent,0);
+        language = lang;
     }
 
     @NonNull
     @Override
     public AudioViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
-        View view = LayoutInflater.from(ct).inflate(R.layout.audio_list_view, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.audio_list_view, parent, false);
         return new AudioViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull AudioViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull final AudioViewHolder holder, int position) {
         String str = data.get(position).getTitle();
         holder.textView.setText(str);
+        holder.isLocked = data.get(position).getIsLocked();
+        holder.lockId = data.get(position).getLockId();
+        holder.txtView.setVisibility(View.VISIBLE);
+        holder.txtView.setVisibility(View.VISIBLE);
+        holder.txtView.setVisibility(View.VISIBLE);
+
+        if(holder.isLocked){
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("accounts");
+            ref.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if(FirebaseAuth.getInstance().getCurrentUser()!=null &&
+                            dataSnapshot.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child(holder.lockId).exists()){
+                        holder.lock.setVisibility(View.GONE);
+                        holder.txtView.setVisibility(View.VISIBLE);
+                        holder.progressBar.setVisibility(View.VISIBLE);
+                        holder.playButton.setVisibility(View.VISIBLE);
+                        holder.isLocked = false;
+                    }else{
+                        holder.lock.setVisibility(View.VISIBLE);
+                        holder.txtView.setVisibility(View.INVISIBLE);
+                        holder.progressBar.setVisibility(View.INVISIBLE);
+                        holder.playButton.setVisibility(View.GONE);
+                        holder.isLocked = true;
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+        }
     }
 
     @Override
@@ -128,6 +183,7 @@ class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> 
 
         private static final int NOTIFICATION_ID = 28346;
         private static final String CHANNEL_ID = "NOTIFICATION_CHANNEL_007";
+
         private static boolean isPaused = false;
         private static AnimatorSet rotateIllusion;
         private final TextView textView;
@@ -138,6 +194,11 @@ class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> 
         private final ProgressBar progressBar;
         private NotificationManagerCompat notificationManager;
         private MediaPlayer player;
+
+        public ImageView lock;
+        public Boolean isLocked;
+        public String lockId;
+
         final Runnable mUpdateTime = new Runnable() {
             public void run() {
                 int currentDuration;
@@ -170,6 +231,8 @@ class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> 
         public AudioViewHolder(@NonNull final View itemView) {
             super(itemView);
             itemView.setOnClickListener(this);
+
+            lock = itemView.findViewById(R.id.audio_lock);
 
             textView = itemView.findViewById(R.id.audio_text_view_title);
 
@@ -222,20 +285,30 @@ class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> 
 
         @Override
         public void onClick(final View view) {
-            String uri = data.get(getAdapterPosition()).getPath();
-            player = Player.getInstance(uri);
-            player.setLooping(true);
-            if(Player.isURISame(uri)){
-                if(isPaused) resume(view);
-                else if(player.isPlaying()) pause(view);
-                else play(view);
-            }else {
-                Vibrator vibrator = (Vibrator) view.getContext().getSystemService(Context.VIBRATOR_SERVICE);
-                vibrator.vibrate(100);
-                Toast.makeText(view.getContext(), "An audio is already " +
-                        "playing. Stop current audio to play another! ", Toast.LENGTH_LONG).show();
+            if(this.isLocked){
+                if(FirebaseAuth.getInstance().getCurrentUser()==null){
+                    Toast.makeText(view.getContext(), "Sign in to proceed!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent intent = new Intent(context, LockAccessActivity.class);
+                intent.putExtra("UID", FirebaseAuth.getInstance().getCurrentUser().getUid());
+                intent.putExtra("LOCK_ID", this.lockId);
+                context.startActivity(intent);
+            }else{
+                String uri = data.get(getAdapterPosition()).getPath();
+                player = Player.getInstance(uri);
+                player.setLooping(true);
+                if(Player.isURISame(uri)){
+                    if(isPaused) resume(view);
+                    else if(player.isPlaying()) pause(view);
+                    else play(view);
+                }else {
+                    Vibrator vibrator = (Vibrator) view.getContext().getSystemService(Context.VIBRATOR_SERVICE);
+                    vibrator.vibrate(100);
+                    Toast.makeText(view.getContext(), "An audio is already " +
+                            "playing. Stop current audio to play another! ", Toast.LENGTH_LONG).show();
+                }
             }
-
         }
 
         @Override
@@ -406,11 +479,132 @@ class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> 
 
         @Override
         public boolean onMenuItemClick(MenuItem menuItem) {
-//            switch (menuItem.getTitle().toString()){
-//
-//            }
+            if(menuItem.getTitle().equals("Share")){
+                try {
+                    final File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)+
+                            "/BiblicalStudies/audios");
+                    dir.mkdir();
+                    final File tempFile = new File(dir,"(BS)"+data.get(getAdapterPosition()).getTitle()+".mp3");
+                    if(tempFile.exists()) {
+                        shareFile(tempFile);
+                        return true;
+                    }
+                    if(ContextCompat.checkSelfPermission(context.getApplicationContext(),
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE)==(PackageManager.PERMISSION_GRANTED)){
+                        download(tempFile, true);
+                        shareFile(tempFile);
+                    }else{
+                        ActivityCompat.requestPermissions(fragment.getActivity(),
+                                new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                        int result = ContextCompat.checkSelfPermission(context.getApplicationContext(),
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                        if(result == 1){
+                            download(tempFile, true);
+                            shareFile(tempFile);
+                        }else{
+                            Toast.makeText(context, "Permission Denied", Toast.LENGTH_SHORT).show();
+                        }
+                    }
 
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }else if(menuItem.getTitle().equals("Download")){
+                final File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)+
+                        "/BiblicalStudies/audios");
+                dir.mkdir();
+                final File tempFile = new File(dir,"(BS)"+data.get(getAdapterPosition()).getTitle()+".mp3");
+                if(tempFile.exists()){
+                    Toast.makeText(context, "File present at "+tempFile.getPath(), Toast.LENGTH_LONG).show();
+                    return true;
+                }
+                download(tempFile, false);
+                return true;
+            }
             return true;
+        }
+
+        private void download(final File tempFile, final boolean indeterminate) {
+            final ProgressDialog progressDialog = new ProgressDialog(context, indeterminate);
+            if(indeterminate)progressDialog.setMessage("Please Wait...");
+            else progressDialog.setMessage("Downloading");
+            progressDialog.show();
+            FirebaseStorage.getInstance().getReference().child(data.get(getAdapterPosition()).getPath())
+                    .getFile(tempFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                    if(!indeterminate){
+                        progressDialog.progressBar2.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                ObjectAnimator anim = ObjectAnimator.ofInt(progressDialog.progressBar2,"progress",
+                                        progressDialog.progressBar2.getProgress(), 100);
+                                anim.start();
+                                anim.addListener(new Animator.AnimatorListener() {
+                                    @Override
+                                    public void onAnimationStart(Animator animator) {
+
+                                    }
+
+                                    @Override
+                                    public void onAnimationEnd(Animator animator) {
+                                        progressDialog.dismiss();
+                                        Toast.makeText(context, "Downloaded at "+tempFile.getPath(), Toast.LENGTH_LONG).show();
+                                    }
+
+                                    @Override
+                                    public void onAnimationCancel(Animator animator) {
+
+                                    }
+
+                                    @Override
+                                    public void onAnimationRepeat(Animator animator) {
+
+                                    }
+                                });
+                            }
+                        });
+                        progressDialog.percentage.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressDialog.percentage.setText(100+"%");
+                            }
+                        });
+                    }else{
+                        progressDialog.dismiss();
+                    }
+                }
+            }).addOnProgressListener(new OnProgressListener<FileDownloadTask.TaskSnapshot>() {
+                @Override
+                public void onProgress(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                    final int progress = (int)(100*taskSnapshot.getBytesTransferred()/
+                            taskSnapshot.getTotalByteCount());
+                    if(!indeterminate){
+                        progressDialog.progressBar2.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                ObjectAnimator.ofInt(progressDialog.progressBar2,"progress",
+                                        progressDialog.progressBar2.getProgress(), progress).start();
+                            }
+                        });
+                        progressDialog.percentage.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressDialog.percentage.setText(progress+"%");
+                            }
+                        });
+                    }
+                }
+            });
+
+        }
+
+        private void shareFile(final File file){
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("audio/*");
+            intent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(context,
+                    "com.biblicalstudies.fileprovider", file));
+            context.startActivity(Intent.createChooser(intent, "Share File.."));
         }
 
         @Override
@@ -418,6 +612,7 @@ class AudioRecycler extends RecyclerView.Adapter<AudioRecycler.AudioViewHolder> 
             MenuItem download = contextMenu.add(Menu.NONE,1,1, "Download");
             MenuItem share = contextMenu.add(Menu.NONE, 2, 0, "Share");
             download.setOnMenuItemClickListener(this);
+            share.setOnMenuItemClickListener(this);
         }
 
     }

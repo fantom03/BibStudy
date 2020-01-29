@@ -45,11 +45,11 @@
                 android:maxLines="1"
                 android:text="Track 1"
                 android:textColor="@color/colorAccent"
-                android:textSize="@dimen/main_text_size"/>
+                android:textSize="14sp"/>
 
             <ProgressBar
                 android:id="@+id/determinateBar"
-                style="@android:style/Widget.Material.ProgressBar.Horizontal"
+                style="?android:progressBarStyleHorizontal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
@@ -75,6 +75,15 @@
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
                 android:background="@drawable/ic_audio_play"/>
+
+            <ImageView
+                android:id="@+id/audio_lock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_signin_lock"
+                android:visibility="gone"/>
 
 
         </RelativeLayout>

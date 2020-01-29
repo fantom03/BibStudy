@@ -1,66 +1,75 @@
 package com.example.biblicalstudies;
 
+import android.Manifest;
+import android.animation.Animator;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class DocFragment extends DialogFragment {
 
-    private RecyclerView recyclerView;
     private final List<ModelDocumentData> documents;
-    private final Map<String, Boolean> map;
-    private DocRecycler recycler;
-    private View view;
-    private String title;
     private static DocFragment fragment;
-    private String lessonId;
-    private ArrayList<Map<String, Boolean>> data;
+    private final Map<String, Boolean> map;
+    private static String language;
+    private String title;
+    private DocRecyclerAdapter recyclerAdapter;
 
     private DocFragment(String title, final Map<String, Boolean> map){
         this.title = title;
-        this.lessonId = String.valueOf(Objects.hash(title));
         documents = new ArrayList<>();
         this.map = map;
-
     }
 
-    public static DocFragment getInstance(String title, Map<String, Boolean> map){
-        if(fragment!=null){
-            fragment.dismiss();
-        }
+    public static DocFragment getInstance(String title, Map<String, Boolean> map, String lang){
+        if(fragment!=null) fragment.dismiss();
+        language = lang;
         return fragment = new DocFragment(title, map);
     }
 
@@ -72,11 +81,12 @@ public class DocFragment extends DialogFragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        view = inflater.inflate(R.layout.doc_popup, container,false);
+        final View view = inflater.inflate(R.layout.doc_popup, container,false);
 
-        recyclerView = view.findViewById(R.id.popup_recycler_view);
-
+        RecyclerView recyclerView = view.findViewById(R.id.popup_recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        recyclerAdapter = new DocRecyclerAdapter(view.getContext(), documents, this);
+        recyclerView.setAdapter(recyclerAdapter);
 
         final ProgressBar progressBar = view.findViewById(R.id.loading_progress_popup);
         progressBar.setVisibility(View.VISIBLE);
@@ -87,15 +97,15 @@ public class DocFragment extends DialogFragment {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(progressBar.isShown()) progressBar.setVisibility(View.GONE);
+                if(map==null) return;
                 for(Map.Entry<String, Boolean> entry : map.entrySet()){
                     if(dataSnapshot.hasChild(entry.getKey())){
-                        documents.add(dataSnapshot.child(entry.getKey()).getValue(ModelDocumentData.class));
+                        ModelDocumentData data = dataSnapshot.child(entry.getKey()).getValue(ModelDocumentData.class);
+                        if(data.getLanguage().equals(language)) documents.add(data);
+                        recyclerAdapter.notifyDataSetChanged();
                     }
                 }
-                recycler = new DocRecycler(getContext(), documents);
-                recyclerView.setAdapter(recycler);
             }
-
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 if(progressBar.isShown()) progressBar.setVisibility(View.GONE);
@@ -132,30 +142,55 @@ public class DocFragment extends DialogFragment {
 
 }
 
-class DocRecycler extends RecyclerView.Adapter<DocRecycler.DocViewHolder> {
+class DocRecyclerAdapter extends RecyclerView.Adapter<DocRecyclerAdapter.DocViewHolder> {
 
-    private static List<ModelDocumentData> data;
-    private View view;
-    private Context ct;
+    private static List<ModelDocumentData> docList;
+    private static Context context;
+    private static DocFragment fragment;
 
-
-    public DocRecycler(Context cm, List<ModelDocumentData> data) {
-        this.data = data;
-        ct = cm;
+    public DocRecyclerAdapter(Context cm, List<ModelDocumentData> data, DocFragment docFragment) {
+        this.docList = data;
+        context = cm;
+        fragment = docFragment;
     }
 
     @NonNull
     @Override
     public DocViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-
-        view = LayoutInflater.from(ct).inflate(R.layout.doc_list_view, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.doc_list_view, parent, false);
         return new DocViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull DocViewHolder holder, int position) {
-        String str = data.get(position).getName().split("(.pdf)$")[0];
+    public void onBindViewHolder(@NonNull final DocViewHolder holder, int position) {
+        String str = docList.get(position).getName().split("(.pdf)$")[0];
         holder.textView.setText(getCamelCase(str));
+        holder.isLocked = docList.get(position).getIsLocked();
+        holder.lockId = docList.get(position).getLockId();
+
+        if(holder.isLocked){
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("accounts");
+            ref.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if(FirebaseAuth.getInstance().getCurrentUser()!=null &&
+                            dataSnapshot.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child(holder.lockId).exists()){
+                        holder.lock.setVisibility(View.GONE);
+                        holder.share.setVisibility(View.VISIBLE);
+                        holder.isLocked = false;
+                    }else{
+                        holder.share.setVisibility(View.GONE);
+                        holder.lock.setVisibility(View.VISIBLE);
+                        holder.isLocked = true;
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+        }
     }
 
     private String getCamelCase(String str){
@@ -166,48 +201,222 @@ class DocRecycler extends RecyclerView.Adapter<DocRecycler.DocViewHolder> {
 
     @Override
     public int getItemCount() {
-        return data.size();
+        return docList.size();
     }
 
     public static class DocViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener,
             View.OnCreateContextMenuListener, MenuItem.OnMenuItemClickListener, View.OnLongClickListener {
+
         TextView textView;
 
+        public ImageButton share;
+        public ImageView lock;
+        public boolean isLocked;
+        public String lockId;
 
         public DocViewHolder(@NonNull View itemView) {
             super(itemView);
             textView = itemView.findViewById(R.id.doc_text_view_title);
+            lock = itemView.findViewById(R.id.doc_image_view_lock);
+            share = itemView.findViewById(R.id.doc_share);
             itemView.setOnClickListener(this);
             itemView.setOnCreateContextMenuListener(this);
-        }
 
-        @Override
-        public void onClick(final View view) {
-            StorageReference ref = FirebaseStorage.getInstance().getReference();
-            StorageReference doc = ref.child(data.get(getAdapterPosition()).getPath());
-            final ProgressBar progressBar = view.getRootView().findViewById(R.id.loading_progress_popup);
-            progressBar.setVisibility(View.VISIBLE);
-
-            doc.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+            share.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onSuccess(Uri uri) {
-                    progressBar.setVisibility(View.GONE);
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setDataAndType(uri, "application/pdf");
-                    view.getContext().startActivity(Intent.createChooser(intent, "Choose an Application:"));
+                public void onClick(View view) {
+                    try {
+                        final File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)+
+                                "/BiblicalStudies/docs");
+                        dir.mkdir();
+                        final File tempFile = new File(dir,"(BS)"+docList.get(getAdapterPosition()).getName());
+                        if(tempFile.exists()) {
+                            shareFile(tempFile);
+                            return;
+                        }
+                        if(ContextCompat.checkSelfPermission(context.getApplicationContext(),
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE)==(PackageManager.PERMISSION_GRANTED)){
+                            shareFile(tempFile);
+                        }else{
+                            ActivityCompat.requestPermissions(fragment.getActivity(),
+                                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                            int result = ContextCompat.checkSelfPermission(context.getApplicationContext(),
+                                    Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                            if(result == 1){
+                                shareFile(tempFile);
+                            }else{
+                                Toast.makeText(context, "Permission Denied", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-            }).addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    progressBar.setVisibility(View.GONE);
-                    Toast.makeText(view.getContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+
+                private void shareFile(final File file) {
+                    final ProgressDialog progressDialog;
+                    progressDialog = new ProgressDialog(context, true);
+                    progressDialog.setMessage("Please Wait...");
+                    progressDialog.show();
+
+                    String path = docList.get(getAdapterPosition()).getPath();
+                    FirebaseStorage.getInstance().getReference()
+                            .child(path).getFile(file).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
+                            if(task.isSuccessful()){
+                                progressDialog.dismiss();
+                                Intent intent = new Intent(Intent.ACTION_SEND);
+                                intent.setType("application/pdf");
+                                intent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(
+                                        context, "com.biblicalstudies.fileprovider",file
+                                ));
+                                context.startActivity(Intent.createChooser(intent, "Share File.."));
+                            }
+                        }
+                    });
                 }
             });
         }
 
         @Override
+        public void onClick(final View view) {
+            if(this.isLocked){
+                if(FirebaseAuth.getInstance().getCurrentUser()==null){
+                    Toast.makeText(view.getContext(), "Sign in to proceed!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent intent = new Intent(context, LockAccessActivity.class);
+                intent.putExtra("UID", FirebaseAuth.getInstance().getCurrentUser().getUid());
+                intent.putExtra("LOCK_ID", this.lockId);
+                fragment.dismiss();
+                context.startActivity(intent);
+            }else{
+                StorageReference ref = FirebaseStorage.getInstance().getReference();
+                StorageReference doc = ref.child(docList.get(getAdapterPosition()).getPath());
+                final ProgressBar progressBar = view.getRootView().findViewById(R.id.loading_progress_popup);
+                progressBar.setVisibility(View.VISIBLE);
+
+                doc.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                    @Override
+                    public void onSuccess(Uri uri) {
+                        progressBar.setVisibility(View.GONE);
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setDataAndType(uri, "application/pdf");
+                        view.getContext().startActivity(Intent.createChooser(intent, "Choose an Application:"));
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(view.getContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }
+
+        @Override
         public boolean onMenuItemClick(MenuItem menuItem) {
+            if(menuItem.getTitle().equals("Download")){
+                try {
+                    final File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)+
+                            "/BiblicalStudies/docs");
+                    dir.mkdir();
+                    final File tempFile = new File(dir,"(BS)"+docList.get(getAdapterPosition()).getName());
+                    if(tempFile.exists()) {
+                        Toast.makeText(context, "File present at "+tempFile.getPath(), Toast.LENGTH_LONG).show();
+                        return true;
+                    }
+                    if(ContextCompat.checkSelfPermission(context.getApplicationContext(),
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE)==(PackageManager.PERMISSION_GRANTED)){
+                        shareFile(tempFile);
+                    }else{
+                        ActivityCompat.requestPermissions(fragment.getActivity(),
+                                new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                        int result = ContextCompat.checkSelfPermission(context.getApplicationContext(),
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                        if(result == 1){
+                            shareFile(tempFile);
+                        }else{
+                            Toast.makeText(context, "Permission Denied", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
             return true;
+        }
+
+        private void shareFile(final File file) {
+            final ProgressDialog dialog = new ProgressDialog(context, false);
+            dialog.setMessage("Downloading");
+            dialog.show();
+            String path = docList.get(getAdapterPosition()).getPath();
+            FirebaseStorage.getInstance().getReference()
+                    .child(path).getFile(file).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
+                    if(task.isSuccessful()){
+                        dialog.progressBar2.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                ObjectAnimator anim = ObjectAnimator.ofInt(dialog.progressBar2, "progress",
+                                        dialog.progressBar2.getProgress(), 100);
+                                anim.start();
+                                anim.addListener(new Animator.AnimatorListener() {
+                                    @Override
+                                    public void onAnimationStart(Animator animator) {
+
+                                    }
+
+                                    @Override
+                                    public void onAnimationEnd(Animator animator) {
+
+                                    }
+
+                                    @Override
+                                    public void onAnimationCancel(Animator animator) {
+                                        dialog.dismiss();
+                                    }
+
+                                    @Override
+                                    public void onAnimationRepeat(Animator animator) {
+
+                                    }
+                                });
+                            }
+                        });
+                        dialog.percentage.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                dialog.percentage.setText(100+"%");
+                            }
+                        });
+                        Toast.makeText(context, "File downloaded at "+file.getPath(), Toast.LENGTH_LONG).show();
+                    }
+                }
+            }).addOnProgressListener(new OnProgressListener<FileDownloadTask.TaskSnapshot>() {
+                @Override
+                public void onProgress(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                    final int progress = (int)(100*taskSnapshot.getBytesTransferred()/taskSnapshot.getTotalByteCount());
+                    dialog.progressBar2.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            ObjectAnimator.ofInt(dialog.progressBar2, "progress",
+                                    dialog.progressBar2.getProgress(), progress).start();
+                        }
+                    }, 100);
+                    dialog.percentage.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            dialog.percentage.setText(progress+"%");
+                        }
+                    }, 100);
+                }
+            });
         }
 
         @Override

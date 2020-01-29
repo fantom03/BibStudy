@@ -1,4 +1,5 @@
 <resources>
+
     <string name="app_name">Biblical Studies</string>
     <string name="king_of_kings">King of Kings</string>
     <string name="add_verse">ADD VERSE</string>
@@ -11,4 +12,11 @@
     <string name="lorem_aodfijkadflnkladfnlkdaf">Lorem aodfijkadflnkladfnlkdaf</string>
     <string name="choose_file_type">Choose File Type...</string>
     <string name="choose_lessons">Choose Lesson...</string>
+
+    <string-array name="language_input">
+        <item>English</item>
+        <item>Punjabi</item>
+        <item>Hindi</item>
+    </string-array>
+
 </resources>

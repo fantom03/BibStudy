@@ -2,12 +2,15 @@ package com.example.biblicalstudies;
 
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.transition.Fade;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.Window;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
@@ -18,9 +21,11 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -50,6 +55,10 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     private boolean isLoggedIn = false;
     private boolean isAdmin = false;
 
+    private static AlertDialog.Builder langDialog;
+    private static PageAdapter pageAdapter;
+
+
 
     @Override
     protected void onStart() {
@@ -59,15 +68,21 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().requestFeature(Window.FEATURE_CONTENT_TRANSITIONS);
+        getWindow().setEnterTransition(new Fade());
         setContentView(R.layout.activity_main);
-
+        final SharedPreferences preferences = getPreferences(MODE_PRIVATE);
 
         user = FirebaseAuth.getInstance().getCurrentUser();
+        String em;
         if(user!=null){
             if(user.getEmail()!=null && user.getEmail().equals("nathan3gill@gmail.com")){
                 isAdmin = true;
-            }
+                em = user.getEmail();
+            }else em = (user.getEmail());
             isLoggedIn = true;
+        }else{
+            em = ("Guest");
         }
 
         tabLayout = findViewById(R.id.home_tabLayout);
@@ -108,9 +123,9 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
 
         navigationView = findViewById(R.id.nav_view);
         if(isLoggedIn){
-            navigationView.getMenu().getItem(2).setTitle("SIGN OUT");
+            navigationView.getMenu().getItem(1).setTitle("SIGN OUT");
         }else{
-            navigationView.getMenu().getItem(2).setTitle("SIGN IN");
+            navigationView.getMenu().getItem(1).setTitle("SIGN IN");
         }
         navigationView.setNavigationItemSelectedListener(this);
 
@@ -118,20 +133,60 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
         tabLayout.addTab(tabLayout.newTab().setText("AUDIO"));
 
         viewPager = findViewById(R.id.home_view_pager);
+        pageAdapter = new PageAdapter(getSupportFragmentManager());
+        pageAdapter.addFragment(new LessonFragment(
+                preferences.getString("currentLanguage", "English")), "LESSONS");
+        pageAdapter.addFragment(new AudioFragment(
+                preferences.getString("currentLanguage", "English")), "AUDIO");
+        viewPager.setAdapter(pageAdapter);
 
         tabLayout.setupWithViewPager(viewPager);
 
-        PageAdapter pageAdapter = new PageAdapter(getSupportFragmentManager());
-        pageAdapter.addFragment(new LessonFragment(), "LESSONS");
-        pageAdapter.addFragment(new AudioFragment(), "AUDIO");
-        viewPager.setAdapter(pageAdapter);
-
         if(isAdmin)
             (findViewById(R.id.floating_area)).setVisibility(RelativeLayout.VISIBLE);
+
+        try{
+            TextView textView = navigationView.getHeaderView(0).findViewById(R.id.email);
+            textView.setText(em);
+        }catch(Exception e){
+        }
+
+        ((TextView)findViewById(R.id.select_language)).setText(preferences.getString("currentLanguage", "English"));
+        
+        langDialog = new AlertDialog.Builder(this);
+        langDialog.setTitle("Select Language Input");
+        langDialog.setIcon(R.drawable.ic_nav_language_brown);
+        final String[] lang = getResources().getStringArray(R.array.language_input);
+        langDialog.setSingleChoiceItems(R.array.language_input,
+                preferences.getInt("currentIndex", 0), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                preferences.edit().putInt("currentIndex", i).commit();
+                preferences.edit().putString("currentLanguage", lang[i]).commit();
+            }
+        });
+
+        langDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Intent intent = new Intent(HomeDefault.this, HomeDefault.class);
+                finishAffinity();
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            }
+        });
+
+        langDialog.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+            }
+        });
+        langDialog.create();
     }
 
-
-
+    public void OnClickSelectLanguage(View view){
+        actionButton.performClick();
+    }
 
     private void showFABMenu() {
         LinearLayout btn1 = findViewById(R.id.floating_btn1);
@@ -180,8 +235,6 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
         });
     }
 
-
-
     public void onClickFloatingButton(View view){
 
         ImageView blk = findViewById(R.id.block_view);
@@ -225,26 +278,17 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
         }
     }
 
-    public void onClickCycleVerse(View view){
-        final FloatingActionButton btn = view.findViewById(R.id.cycle_verse);
-        btn.animate().rotation(-90f)
-                .setInterpolator(new AccelerateDecelerateInterpolator()).setDuration(400)
-        .withEndAction(new Runnable() {
-            @Override
-            public void run() {
-                btn.animate().rotation(0).setDuration(400);
-            }
-        });
-    }
 
     public void onClickAddData(View view){
         Intent i = new Intent(this, AddData.class);
         startActivity(i);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
     public void onClickAddAdmin(View view){
         Intent i = new Intent(this,SignIn.class);
         startActivity(i);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
     public void onClickAddVerse(View view){
@@ -265,21 +309,25 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         switch(menuItem.getItemId()){
-            case R.id.drawer_navigate:
-                drawerLayout.closeDrawer(GravityCompat.START);
+            case R.id.drawer_language:
+                langDialog.show();
                 break;
             case R.id.drawer_signIn:
                 if(isLoggedIn){
                     FirebaseAuth.getInstance().signOut();
-                    user = null;
                     isLoggedIn = false; isAdmin = false;
                     drawerLayout.closeDrawer(GravityCompat.START);
                     (findViewById(R.id.floating_area)).setVisibility(RelativeLayout.GONE);
-                    navigationView.getMenu().getItem(2).setTitle("SIGN IN");
+                    navigationView.getMenu().getItem(1).setTitle("SIGN IN");
                     LoginManager.getInstance().logOut();
+                    Intent i = new Intent(this, HomeDefault.class);
+                    finishAffinity();
+                    startActivity(i);
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 }else{
                     Intent i = new Intent(this, SignIn.class);
                     startActivity(i);
+                    finish();
                 }
                 break;
             default:
@@ -317,6 +365,11 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
         public void addFragment(Fragment fm, String title){
             frags.add(fm);
             this.title.add(title);
+        }
+
+        public void clear(){
+            frags.clear();
+            title.clear();
         }
     }
 

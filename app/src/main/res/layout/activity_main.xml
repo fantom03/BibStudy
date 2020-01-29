@@ -56,34 +56,24 @@
                             android:contentDescription="@string/todo"
                             android:src="@drawable/ic_nav_bar" />
 
-                        <LinearLayout
-                            android:layout_width="280dp"
-                            android:layout_height="40dp"
-                            android:layout_gravity="center"
-                            android:layout_marginLeft="10dp"
-                            android:layout_marginTop="2dp"
-                            android:layout_marginRight="10dp"
-                            android:orientation="vertical">
-
-                            <include layout="@layout/search_bar" />
-
-                        </LinearLayout>
-
-                        <com.google.android.material.floatingactionbutton.FloatingActionButton
-                            android:id="@+id/cycle_verse"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="end|center"
-                            android:layout_marginEnd="5dp"
-                            android:backgroundTint="@android:color/white"
-                            android:clickable="true"
-                            android:onClick="onClickCycleVerse"
-                            android:src="@drawable/ic_set_random"
-                            android:tint="@color/colorPrimary"
-                            app:backgroundTint="@color/colorPrimary"
-                            app:fabCustomSize="30dp"/>
+                        <TextView
+                            android:id="@+id/select_language"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:fontFamily="@font/mvboli"
+                            android:gravity="end|center_vertical"
+                            android:onClick="OnClickSelectLanguage"
+                            android:paddingEnd="10dp"
+                            android:text="English"
+                            android:textColor="@color/colorWhite"/>
 
                     </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        android:src="@drawable/verse"/>
 
                     <com.google.android.material.tabs.TabLayout
                         android:id="@+id/home_tabLayout"
