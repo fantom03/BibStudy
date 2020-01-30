@@ -598,6 +598,12 @@ class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdapter.Aud
                         });
                     }
                 }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    progressDialog.dismiss();
+                    Toast.makeText(context, ""+e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                }
             });
 
         }

@@ -276,6 +276,9 @@ class DocRecyclerAdapter extends RecyclerView.Adapter<DocRecyclerAdapter.DocView
                                         context, "com.biblicalstudies.fileprovider",file
                                 ));
                                 context.startActivity(Intent.createChooser(intent, "Share File.."));
+                            }else{
+                                progressDialog.dismiss();
+                                Toast.makeText(context, ""+task.getException().getLocalizedMessage(), Toast.LENGTH_SHORT).show();
                             }
                         }
                     });
