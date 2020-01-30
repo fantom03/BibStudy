@@ -290,7 +290,7 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
                     return;
                 }
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                intent.setType("audio/*");
+                intent.setType("audio/mpeg");
                 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                 startActivityForResult(Intent.createChooser(intent, "Select Document"), READ_REQ_CODE_AUDIO);
             }
@@ -711,20 +711,22 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
                 @Override
                 public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
                     if(dataSnapshot.exists()){
-                        Map<String, Boolean> map =  dataSnapshot.child(String.valueOf(Objects.hash(name)))
+                        final Map<String, Boolean> map =  dataSnapshot.child(String.valueOf(Objects.hash(name)))
                                 .getValue(ModelLessonData.class).getDocs();
                         dataSnapshot.child(String.valueOf(Objects.hash(name))).getRef().removeValue();
                         mLessonData.remove(name);
                         ((ArrayAdapter) spinnerLAV.getAdapter()).notifyDataSetChanged();
                         if(map == null) return;
                         final DatabaseReference docRef = dbRef.child("docs");
-                        for (final Map.Entry<String, Boolean> entry : map.entrySet()) {
-                            ValueEventListener listener1 = new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
-                                    ModelDocumentData data = dataSnapshot.getChildren().iterator().next()
-                                            .getValue(ModelDocumentData.class);
-                                    mRef.child(data.getPath()).delete()
+                        docRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
+                                if(!dataSnapshot.exists()) return;
+                                if(map == null) return;
+                                for(final Map.Entry<String, Boolean> entry:map.entrySet()){
+                                    String path = dataSnapshot.child(entry.getKey()).child("path")
+                                            .getValue(String.class);
+                                    if(path!=null) mRef.child(path).delete()
                                             .addOnSuccessListener(new OnSuccessListener<Void>() {
                                                 @Override
                                                 public void onSuccess(Void aVoid) {
@@ -732,15 +734,13 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
                                                 }
                                             });
                                 }
+                            }
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError databaseError) {
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                                }
-                            };
-                            docRef.addListenerForSingleValueEvent(listener1);
-                            docRef.removeEventListener(listener1);
-                        }
+                            }
+                        });
                     }
                 }
                 @Override
@@ -749,13 +749,11 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
                 }
             });
 
-
         }else if(type.equals("docs")){
 
             DatabaseReference docRef = dbRef.child("docs");
             Query query = docRef.orderByChild("name").equalTo(name);
             mDocumentData.remove(name);
-            mRef.child("documents/"+name).delete();
             ((ArrayAdapter)spinnerDoc.getAdapter()).notifyDataSetChanged();
             query.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
@@ -769,8 +767,10 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
                                 if(snapshot.exists()){
                                     if(snapshot.getChildren().iterator().next().child("docs").child(key).exists()){
+                                        mRef.child("documents/"+name).delete();
                                         snapshot.getChildren().iterator().next().child("docs").child(key).getRef().removeValue();
                                         dataSnapshot.child(key).getRef().removeValue();
+                                        Toast.makeText(AddData.this, name+" deleted successfully.", Toast.LENGTH_SHORT).show();
                                     }
                                 }
                             }
@@ -792,12 +792,18 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
         }else if(type.equals("audios")){
             DatabaseReference docRef = dbRef.child("audios");
             Query query = docRef.orderByChild("title").equalTo(name);
-            mRef.child("audio/"+name).delete();
-            query.addValueEventListener(new ValueEventListener() {
+            query.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    if(dataSnapshot.exists())
-                        dataSnapshot.getChildren().iterator().next().getRef().removeValue();
+                public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
+                    if(dataSnapshot.exists()){
+                        mRef.child("audio/"+name).delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                dataSnapshot.getChildren().iterator().next().getRef().removeValue();
+                                Toast.makeText(AddData.this, name+"Deleted Successfuly", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
                 }
 
                 @Override
@@ -857,6 +863,7 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
     public void onBackPressed() {
         finishAffinity();
         startActivity(new Intent(this, HomeDefault.class));
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         super.onBackPressed();
     }
 
@@ -902,7 +909,7 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
                 int length = data.getClipData().getItemCount();
                 for(int i=0; i<length; i++){
                     Uri uri = data.getClipData().getItemAt(i).getUri();
-                    String name = getFileName(uri);
+                    String name = getFileName(uri).endsWith(".pdf")?getFileName(uri):getFileName(uri)+".pdf";
                     FileObject obj = new FileObject(name, uri);
                     if(!mStoreList.contains(obj)){
                         mStoreList.add(obj);
@@ -916,7 +923,7 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
 
             }else if(data.getData()!=null){
                 Uri uri = data.getData();
-                String name = getFileName(uri);
+                String name = getFileName(uri).endsWith(".pdf")?getFileName(uri):getFileName(uri)+".pdf";
                 FileObject obj = new FileObject(name, uri);
                 if(!mStoreList.contains(obj)){
                     mStoreList.add(obj);
@@ -944,7 +951,7 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
         if(type.equals("lessons")){
             DatabaseReference ref = dbRef.child("docs");
             Query query = ref.orderByChild("name").equalTo(name);
-            query.addValueEventListener(new ValueEventListener() {
+            query.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(!dataSnapshot.exists()) {
@@ -993,7 +1000,7 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
         }else if(type.equals("audios")){
             DatabaseReference ref = dbRef.child("audios");
             Query query = ref.orderByChild("title").equalTo(name);
-            query.addValueEventListener(new ValueEventListener() {
+            query.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(!dataSnapshot.exists()) {
@@ -1049,7 +1056,7 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
         if(type.equals("lessons")){
             DatabaseReference refDoc = dbRef.child("docs"), refLesson = dbRef.child(type), refLock = dbRef.child("lock");
             if(checked){
-                String lockId = String.valueOf(Objects.hash(lockArrayList.toString()));
+                String lockId = refLock.push().getKey();
                 refLock.child(lockId).setValue(lockArrayList);
                 String id1 = refDoc.push().getKey();
                 refDoc.child(id1).child("name").setValue(name);
@@ -1067,7 +1074,7 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
                 refLesson.child(id2).child("lockId").setValue(lockId);
 
             }else if(switchDocChecked){
-                String lockId = String.valueOf(Objects.hash(lockArrayList.toString()));
+                String lockId = refLock.push().getKey();
                 refLock.child(lockId).setValue(lockArrayList);
                 String id1 = refDoc.push().getKey();
                 refDoc.child(id1).child("name").setValue(name);
@@ -1104,7 +1111,7 @@ public class AddData extends AppCompatActivity implements RecyclerItemTouchHelpe
         else if(type.equals("audios")){
             if(checked){
                 DatabaseReference ref = dbRef.child("audios"), refLock=dbRef.child("lock");
-                String lockId = String.valueOf(Objects.hash(lockArrayList.toString()));
+                String lockId = refLock.push().getKey();
                 refLock.child(lockId).setValue(lockArrayList);
                 String audId = ref.push().getKey();
                 ref.child(audId).child("title").setValue(name);

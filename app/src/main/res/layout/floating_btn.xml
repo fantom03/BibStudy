@@ -81,7 +81,7 @@
                 android:fontFamily="@font/mvboli"
                 android:gravity="center"
                 android:padding="2dp"
-                android:text="@string/add_verse"
+                android:text="ADD ABOUT"
                 android:textSize="12sp"
                 android:textStyle="bold"/>
 

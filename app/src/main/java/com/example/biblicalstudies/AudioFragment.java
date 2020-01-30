@@ -123,6 +123,7 @@ class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdapter.Aud
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
         pendingIntent = PendingIntent.getActivity(cm,0,intent,0);
         language = lang;
+        fragment = audioFragment;
     }
 
     @NonNull
@@ -149,7 +150,8 @@ class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdapter.Aud
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(FirebaseAuth.getInstance().getCurrentUser()!=null &&
-                            dataSnapshot.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child(holder.lockId).exists()){
+                            dataSnapshot.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("locks")
+                                    .child(holder.lockId).exists()){
                         holder.lock.setVisibility(View.GONE);
                         holder.txtView.setVisibility(View.VISIBLE);
                         holder.progressBar.setVisibility(View.VISIBLE);
@@ -526,8 +528,9 @@ class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdapter.Aud
 
         private void download(final File tempFile, final boolean indeterminate) {
             final ProgressDialog progressDialog = new ProgressDialog(context, indeterminate);
-            if(indeterminate)progressDialog.setMessage("Please Wait...");
+            if(indeterminate)progressDialog.setMessage("Please Wait");
             else progressDialog.setMessage("Downloading");
+            progressDialog.setCancelable(false);
             progressDialog.show();
             FirebaseStorage.getInstance().getReference().child(data.get(getAdapterPosition()).getPath())
                     .getFile(tempFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {

@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,8 +50,10 @@ public class LessonFragment extends Fragment {
         dbRef = FirebaseDatabase.getInstance().getReference();
         final DatabaseReference ref = dbRef.child("lessons");
 
-        final ProgressBar progressBar = this.getActivity().findViewById(R.id.loading_progress);
-        progressBar.setVisibility(View.VISIBLE);
+        final ProgressDialog dialog = new ProgressDialog(view.getContext(), true);
+        dialog.setMessage("Loading");
+        dialog.setCancelable(false);
+        dialog.show();
 
         RecyclerView recyclerView = view.findViewById(R.id.lessons_recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
@@ -63,9 +64,7 @@ public class LessonFragment extends Fragment {
         ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(progressBar.isShown()){
-                    progressBar.setVisibility(View.GONE);
-                }
+              dialog.dismiss();
                 if (dataSnapshot.exists()) {
                     for(DataSnapshot snap : dataSnapshot.getChildren()){
                         ModelLessonData data = snap.getValue(ModelLessonData.class);
@@ -77,9 +76,7 @@ public class LessonFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                if(progressBar.isShown()){
-                    progressBar.setVisibility(View.GONE);
-                }
+                dialog.dismiss();
                 Toast.makeText(view.getContext(), databaseError.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });

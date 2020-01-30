@@ -1,32 +1,39 @@
 package com.example.biblicalstudies;
 
+import android.animation.Animator;
 import android.animation.AnimatorInflater;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.transition.Fade;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.AnticipateOvershootInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
@@ -40,8 +47,14 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class HomeDefault extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -58,7 +71,11 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     private static AlertDialog.Builder langDialog;
     private static PageAdapter pageAdapter;
 
+    private static DatabaseReference dbRef;
 
+    static{
+        dbRef = FirebaseDatabase.getInstance().getReference();
+    }
 
     @Override
     protected void onStart() {
@@ -68,18 +85,15 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().requestFeature(Window.FEATURE_CONTENT_TRANSITIONS);
-        getWindow().setEnterTransition(new Fade());
         setContentView(R.layout.activity_main);
         final SharedPreferences preferences = getPreferences(MODE_PRIVATE);
 
         user = FirebaseAuth.getInstance().getCurrentUser();
         String em;
         if(user!=null){
-            if(user.getEmail()!=null && user.getEmail().equals("nathan3gill@gmail.com")){
-                isAdmin = true;
-                em = user.getEmail();
-            }else em = (user.getEmail());
+            DatabaseReference userRef = dbRef.child("accounts");
+            userRef.child(user.getUid()).child("email").setValue(user.getEmail());
+            em = (user.getEmail());
             isLoggedIn = true;
         }else{
             em = ("Guest");
@@ -142,8 +156,20 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
 
         tabLayout.setupWithViewPager(viewPager);
 
-        if(isAdmin)
-            (findViewById(R.id.floating_area)).setVisibility(RelativeLayout.VISIBLE);
+        DatabaseReference adminRef = dbRef.child("admin");
+        adminRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(user!=null && dataSnapshot.exists() && dataSnapshot.child(user.getUid()).exists()){
+                    (findViewById(R.id.floating_area)).setVisibility(RelativeLayout.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
 
         try{
             TextView textView = navigationView.getHeaderView(0).findViewById(R.id.email);
@@ -286,24 +312,102 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
     }
 
     public void onClickAddAdmin(View view){
-        Intent i = new Intent(this,SignIn.class);
-        startActivity(i);
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        isFloatingBtnClicked = false;
+        ImageView blk = findViewById(R.id.block_view);
+        FloatingActionButton btn = view.findViewById(R.id.floating_btn);
+        Animation fadeOut = new AlphaAnimation(1f,0);
+        fadeOut.setInterpolator(new AccelerateInterpolator());
+        fadeOut.setDuration(300);
+        AnimationSet set = new AnimationSet(false);
+        set.addAnimation(fadeOut);
+        blk.setAnimation(set);
+        blk.setVisibility(ImageView.GONE);
+
+        AnimatorSet rotateSet = (AnimatorSet) AnimatorInflater.loadAnimator(view.getContext(), R.animator.rotate_45_reverse);
+        rotateSet.setTarget(btn);
+        rotateSet.start();
+        closeFABMenu();
+        rotateSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                final Dialog dialog = new Dialog(HomeDefault.this);
+                dialog.setContentView(R.layout.add_admin_dialog);
+                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                final Spinner spinner = dialog.findViewById(R.id.admin_spinner);
+                final CardView btn1 = dialog.findViewById(R.id.admin_btn1);
+                final CardView btn2 = dialog.findViewById(R.id.admin_btn2);
+
+                final ArrayList<String> email = new ArrayList<>();
+                final ArrayList<UserObject> uid = new ArrayList<>();
+                email.add("Choose Existing Users...");
+                final ArrayAdapter adapter = new ArrayAdapter(HomeDefault.this, R.layout.spinner_layout,  email);
+                spinner.setAdapter(adapter);
+                dbRef.child("accounts").addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if(dataSnapshot.exists()){
+                            for(DataSnapshot snap:dataSnapshot.getChildren()){
+                                String em = snap.child("email").getValue(String.class);
+                                if(em != null) {
+                                    email.add(em);
+                                    uid.add(new UserObject(em, snap.getKey()));
+                                }
+                            }
+                            Collections.sort(email);
+                            adapter.notifyDataSetChanged();
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+                btn1.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        dialog.dismiss();
+                    }
+                });
+                btn2.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        if(spinner.getSelectedItem().toString().equals("Choose Existing Users...")) {
+                            Toast.makeText(HomeDefault.this, "Choose a user", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        AlertDialog.Builder alert = new AlertDialog.Builder(HomeDefault.this);
+                        alert.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                String name = spinner.getSelectedItem().toString();
+                                int k;
+                                for(k=0; k<uid.size(); k++) if(uid.get(k).email.equals(name)) break;
+                                dbRef.child("admin").child(uid.get(k).uid).setValue(true);
+                                Toast.makeText(HomeDefault.this, "Admin list updated.", Toast.LENGTH_SHORT).show();
+                                dialog.dismiss();
+                            }
+                        }).setNegativeButton("No", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+
+                            }
+                        });
+                        alert.setTitle("Are you sure?").create();
+                        alert.show();
+                    }
+                });
+                dialog.setCancelable(false);
+                dialog.show();
+            }
+        });
+
     }
 
     public void onClickAddVerse(View view){
-
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-
-        return true;
+        Intent intent = new Intent(this, SetAbout.class);
+        startActivity(intent);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
     @Override
@@ -330,10 +434,75 @@ public class HomeDefault extends AppCompatActivity implements NavigationView.OnN
                     finish();
                 }
                 break;
+            case R.id.drawer_about:
+                final Dialog aboutDialog = new Dialog(HomeDefault.this);
+                aboutDialog.setContentView(R.layout.about_page);
+                aboutDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                final TextView textView = aboutDialog.findViewById(R.id.about_page_text);
+                dbRef.child("about").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if(dataSnapshot.exists()){
+                            final String ab = dataSnapshot.child("text").getValue(String.class);
+                            textView.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    textView.setText(ab);
+                                }
+                            });
+                        }
+                        drawerLayout.closeDrawer(GravityCompat.START);
+                        aboutDialog.show();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+                (aboutDialog.findViewById(R.id.dialog_about_card_view)).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        aboutDialog.dismiss();
+                    }
+                });
+
             default:
                 return true;
         }
         return true;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+
+        return true;
+    }
+
+    class UserObject implements Comparable<UserObject>{
+        public String email;
+        public String uid;
+
+        public UserObject(String em, String key) {
+            this.email = em;
+            this.uid = key;
+        }
+
+        @Override
+        public int compareTo(UserObject userObject) {
+            return this.email.compareTo(userObject.email);
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return email;
+        }
     }
 
     class PageAdapter extends FragmentPagerAdapter {

@@ -30,6 +30,7 @@ import com.facebook.FacebookException;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -207,7 +208,8 @@ public class SignIn extends AppCompatActivity {
     }
 
     public void onClickSocialGoogle(View view) {
-
+        Toast.makeText(this, "Sorry! Service not available yet. " +
+                "Please try different Sign in methods.", Toast.LENGTH_LONG).show();
     }
 
     public void onClickSocialFacebook(View view) {
@@ -239,8 +241,6 @@ public class SignIn extends AppCompatActivity {
     public void onClickSignup(final View view){
 
         final FirebaseAuth auth = FirebaseAuth.getInstance();
-        final RelativeLayout authenticationView = findViewById(R.id.authenticate_view);
-        final ProgressBar auhtenticateProgressBar = findViewById(R.id.authenticate_progress_bar);
         final EditText email = findViewById(R.id.signup_email),
                 pass = findViewById(R.id.signup_pass),
                 confirmPass = findViewById(R.id.signup_confirmpass);
@@ -252,16 +252,9 @@ public class SignIn extends AppCompatActivity {
             else if (pass.getText().toString().isEmpty()) pass.requestFocus();
             else confirmPass.requestFocus();
         }else{
-            authenticationView.setVisibility(View.VISIBLE);
-            authenticationView.animate().alpha(0.6f).setInterpolator(new AccelerateInterpolator())
-                    .setDuration(100)
-            .withEndAction(new Runnable() {
-                @Override
-                public void run() {
-                    auhtenticateProgressBar.setVisibility(View.VISIBLE);
-                }
-            });
-
+            final ProgressDialog progressDialog = new ProgressDialog(this, true);
+            progressDialog.setMessage("Loading");
+            progressDialog.show();
             auth.createUserWithEmailAndPassword(email.getText().toString(),pass.getText().toString())
             .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                 @Override
@@ -269,32 +262,37 @@ public class SignIn extends AppCompatActivity {
                     if(task.isSuccessful()){
                         try {
                             Thread.sleep(400);
-                            auth.signInWithEmailAndPassword(email.getText().toString(), pass.getText().toString())
-                                    .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                            auth.signInWithEmailAndPassword(email.getText().toString(), pass.getText().toString()).addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                                @Override
+                                public void onSuccess(AuthResult authResult) {
+                                    FirebaseAuth.getInstance().getCurrentUser().sendEmailVerification().addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override
-                                        public void onSuccess(AuthResult authResult) {
-                                            Toast.makeText(SignIn.this,
-                                                    "Account Created! Sign In successful!",Toast.LENGTH_SHORT).show();
-                                            Intent i = new Intent(SignIn.this,HomeDefault.class);
-                                            startActivity(i);
-                                            finish();
+                                        public void onSuccess(Void aVoid) {
+                                            Toast.makeText(SignIn.this, "Verification Link sent to you email "+
+                                                    email.getText().toString(), Toast.LENGTH_LONG).show();
+                                            FirebaseAuth.getInstance().signOut();
+                                        }
+                                    }).addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            FirebaseAuth.getInstance().getCurrentUser().delete();
+                                            Toast.makeText(SignIn.this, "Failed to send verification email. Email invalid or" +
+                                                    " "+e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
                                         }
                                     });
+                                }
+                            });
 
                         } catch (InterruptedException e) {
                             e.printStackTrace();
+                        }finally {
+                            progressDialog.dismiss();
                         }
                     }else{
+                        progressDialog.dismiss();
                         Toast.makeText(SignIn.this,
                                 task.getException().getLocalizedMessage(),Toast.LENGTH_LONG).show();
-                        authenticationView.animate().alpha(0).setInterpolator(new DecelerateInterpolator())
-                                .setDuration(100).withEndAction(new Runnable() {
-                            @Override
-                            public void run() {
-                                authenticationView.setVisibility(View.GONE);
-                                auhtenticateProgressBar.setVisibility(View.GONE);
-                            }
-                        });
+
                     }
                 }
             });
@@ -333,7 +331,28 @@ public class SignIn extends AppCompatActivity {
     }
 
     public void onClickForgotPassword(final View view){
-
+        EditText email = findViewById(R.id.signin_email);
+        if(email.getText().toString().isEmpty()){
+            email.requestFocus();
+            Toast.makeText(this, "Enter email", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final ProgressDialog progressDialog = new ProgressDialog(this, true);
+        progressDialog.setMessage("Loading");
+        progressDialog.show();
+        FirebaseAuth.getInstance().sendPasswordResetEmail(email.getText().toString()).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                progressDialog.dismiss();
+                Toast.makeText(SignIn.this, "Password reset link is sent to your email.", Toast.LENGTH_LONG).show();
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                progressDialog.dismiss();
+                Toast.makeText(SignIn.this, "Not a valid email or "+e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void authenticate(View view, final EditText email, final EditText password,
@@ -347,6 +366,28 @@ public class SignIn extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
+                            if(!FirebaseAuth.getInstance().getCurrentUser().isEmailVerified()){
+                                Toast.makeText(SignIn.this, "Email not verified. Verify to sign in.", Toast.LENGTH_LONG).show();
+                                FirebaseAuth.getInstance().signOut();
+                                progressBar.animate().alpha(0f)
+                                        .setInterpolator(new AnticipateOvershootInterpolator()).setDuration(10).withEndAction(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        progressBar.setVisibility(View.GONE);
+                                        signIn.setVisibility(View.VISIBLE);
+                                        signIn.animate().scaleX(1)
+                                                .setInterpolator(new AnticipateOvershootInterpolator()).setDuration(600)
+                                                .alpha(1f).setInterpolator(new DecelerateInterpolator()).setDuration(400)
+                                                .withEndAction(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                                                    }
+                                                });
+                                    }
+                                });
+                                return;
+                            }
                             try {
                                 Thread.sleep(400);
                                 progressBar.animate().alpha(0).withEndAction(new Runnable() {
@@ -365,11 +406,12 @@ public class SignIn extends AppCompatActivity {
                                         "Sign In Successful!", Toast.LENGTH_LONG).show();
                                 Intent i = new Intent(SignIn.this,HomeDefault.class);
                                 startActivity(i);
+                                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                                finish();
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
                             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                            finishAffinity();
                         } else {
                             try {
                                 Thread.sleep(800);
@@ -428,5 +470,12 @@ public class SignIn extends AppCompatActivity {
             }
         });
 
+    }
+
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent(this, HomeDefault.class);
+        startActivity(intent);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 }

@@ -113,7 +113,7 @@ public class LockAccessActivity extends AppCompatActivity {
 
     private void unlock() {
         DatabaseReference user = dbRef.child("accounts");
-        user.child(uid).child(lockId).setValue(true);
+        user.child(uid).child("locks").child(lockId).setValue(true);
         Toast.makeText(this, "Unlocked Successfully!", Toast.LENGTH_LONG).show();
         Intent intent = new Intent(this, HomeDefault.class);
         finishAffinity();

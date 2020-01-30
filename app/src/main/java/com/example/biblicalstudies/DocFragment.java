@@ -174,7 +174,8 @@ class DocRecyclerAdapter extends RecyclerView.Adapter<DocRecyclerAdapter.DocView
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(FirebaseAuth.getInstance().getCurrentUser()!=null &&
-                            dataSnapshot.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child(holder.lockId).exists()){
+                            dataSnapshot.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                                    .child("locks").child(holder.lockId).exists()){
                         holder.lock.setVisibility(View.GONE);
                         holder.share.setVisibility(View.VISIBLE);
                         holder.isLocked = false;
@@ -229,7 +230,8 @@ class DocRecyclerAdapter extends RecyclerView.Adapter<DocRecyclerAdapter.DocView
                         final File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)+
                                 "/BiblicalStudies/docs");
                         dir.mkdir();
-                        final File tempFile = new File(dir,"(BS)"+docList.get(getAdapterPosition()).getName());
+                        String name = docList.get(getAdapterPosition()).getName();
+                        final File tempFile = new File(dir,"(BS)"+(name.endsWith(".pdf")?name:name+".pdf"));
                         if(tempFile.exists()) {
                             shareFile(tempFile);
                             return;
@@ -257,7 +259,8 @@ class DocRecyclerAdapter extends RecyclerView.Adapter<DocRecyclerAdapter.DocView
                 private void shareFile(final File file) {
                     final ProgressDialog progressDialog;
                     progressDialog = new ProgressDialog(context, true);
-                    progressDialog.setMessage("Please Wait...");
+                    progressDialog.setMessage("Please Wait");
+                    progressDialog.setCancelable(false);
                     progressDialog.show();
 
                     String path = docList.get(getAdapterPosition()).getPath();
@@ -295,13 +298,14 @@ class DocRecyclerAdapter extends RecyclerView.Adapter<DocRecyclerAdapter.DocView
             }else{
                 StorageReference ref = FirebaseStorage.getInstance().getReference();
                 StorageReference doc = ref.child(docList.get(getAdapterPosition()).getPath());
-                final ProgressBar progressBar = view.getRootView().findViewById(R.id.loading_progress_popup);
-                progressBar.setVisibility(View.VISIBLE);
-
+                final ProgressDialog progressDialog = new ProgressDialog(context, true);
+                progressDialog.setCancelable(false);
+                progressDialog.setMessage("Loading");
+                progressDialog.show();
                 doc.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                     @Override
                     public void onSuccess(Uri uri) {
-                        progressBar.setVisibility(View.GONE);
+                        progressDialog.dismiss();
                         Intent intent = new Intent(Intent.ACTION_VIEW);
                         intent.setDataAndType(uri, "application/pdf");
                         view.getContext().startActivity(Intent.createChooser(intent, "Choose an Application:"));
@@ -309,7 +313,7 @@ class DocRecyclerAdapter extends RecyclerView.Adapter<DocRecyclerAdapter.DocView
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        progressBar.setVisibility(View.GONE);
+                        progressDialog.dismiss();
                         Toast.makeText(view.getContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -353,6 +357,7 @@ class DocRecyclerAdapter extends RecyclerView.Adapter<DocRecyclerAdapter.DocView
         private void shareFile(final File file) {
             final ProgressDialog dialog = new ProgressDialog(context, false);
             dialog.setMessage("Downloading");
+            dialog.setCancelable(false);
             dialog.show();
             String path = docList.get(getAdapterPosition()).getPath();
             FirebaseStorage.getInstance().getReference()
@@ -374,12 +379,12 @@ class DocRecyclerAdapter extends RecyclerView.Adapter<DocRecyclerAdapter.DocView
 
                                     @Override
                                     public void onAnimationEnd(Animator animator) {
-
+                                        dialog.dismiss();
                                     }
 
                                     @Override
                                     public void onAnimationCancel(Animator animator) {
-                                        dialog.dismiss();
+
                                     }
 
                                     @Override
